@@ -1,0 +1,8 @@
+# Secrets & Credentials
+*.key
+*.pem
+*.env
+.env
+.env.*
+secrets/
+private-*.yaml

@@ -1,0 +1,64 @@
+# ==========================================
+# Theme: Cyberpunk (L3RN4-NIX)
+# Structure: Catppuccin/Nord/Tokyo Night style
+# ==========================================
+
+meta:
+  name: "cyberpunk"
+  author: "thedenisnikulin"
+  variant: "dark"
+
+# --- Base (Фоны) ---
+base:
+  bg:       "#120b10"   # Основной фон (Normal bg)
+  bg_alt:   "#1a1018"   # Альтернативный фон
+  bg_dark:  "#000000"   # Абсолютно черный (для CursorLine)
+  bg_deep:  "#140007"   # Глубокий фон (для Pmenu)
+
+# --- Surface (Элементы интерфейса) ---
+surface:
+  status_bg:  "#1d000a"   # Фон статусной строки (StatusLine)
+  selection:  "#563466"   # Фон выделенного текста (Visual)
+  column_bg:  "#182333"   # Фон колонки (ColorColumn)
+  search_bg:  "#283593"   # Фон поиска (IncSearch)
+  non_text:   "#2B3E5A"   # Непечатаемые символы
+  todo_bg:    "#372963"   # Фон Todo
+
+# --- Text (Текст) ---
+text:
+  main:       "#FF0055"   # Основной текст (кислотно-розовый)
+  light:      "#EEFFFF"   # Яркий текст (идентификаторы)
+  muted:      "#6766b3"   # Комментарии (приглушенный)
+  heading:    "#c592ff"   # Заголовки (светло-фиолетовый)
+
+# --- Accents (Синтаксис и ANSI-цвета) ---
+accents:
+  blue:       "#76C1FF"   # Строки, операторы
+  purple:     "#d57bff"   # Функции, классы
+  cyan:       "#00FFC8"   # Директории, свернутый текст
+  green:      "#00FF9C"   # Типы данных, препроцессор
+  yellow:     "#fffc58"   # Числа, логические значения
+  red:        "#ff3270"   # Ошибки (Diagnostics)
+  pink:       "#FF4081"   # Вкладки (TabLine)
+  teal:       "#009550"   # Предупреждения (Diagnostics)
+
+# --- ANSI (Маппинг для терминалов) ---
+# Это используется в Windows Terminal, Alacritty, Foot и др.
+ansi:
+  black:          "#120b10"
+  red:            "#ff3270"
+  green:          "#00FF9C"
+  yellow:         "#fffc58"
+  blue:           "#76C1FF"
+  magenta:        "#d57bff"
+  cyan:           "#00FFC8"
+  white:          "#EEFFFF"
+  
+  bright_black:   "#6766b3"
+  bright_red:     "#FF0055"
+  bright_green:   "#00FF9C"
+  bright_yellow:  "#fffc58"
+  bright_blue:    "#76C1FF"
+  bright_magenta: "#c592ff"
+  bright_cyan:    "#00FFC8"
+  bright_white:   "#FFFFFF"

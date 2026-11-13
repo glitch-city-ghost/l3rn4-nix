@@ -1,0 +1,22 @@
+echo "Merging mihomo configs..."
+
+WIN_HOME=$(/mnt/c/Windows/System32/cmd.exe /c "echo %USERPROFILE%" 2>/dev/null | tr -d '\r')
+
+if [ -n "$WIN_HOME" ]; then
+  WSL_HOME=$(/bin/wslpath "$WIN_HOME")
+  SRC="$WSL_HOME/mihomo-config.yaml"
+
+  if [ -f "$SRC" ]; then
+    mkdir -p /var/lib/private/mihomo
+    
+    # Используем @YQ@ вместо yq
+    @YQ@ eval-all '. as $item ireduce ({}; . * $item)' "$SRC" "@PUBLIC_CONFIG@" > /var/lib/private/mihomo/config.yaml
+    
+    chmod 0600 /var/lib/private/mihomo/config.yaml
+    echo "Successfully merged configs from $SRC"
+  else
+    echo "WARNING: File not found at $SRC" >&2
+  fi
+else
+  echo "WARNING: Could not determine Windows home directory." >&2
+fi

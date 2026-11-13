@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Переходим в директорию, где лежит сам скрипт
+cd "$(dirname "$(readlink -f "$0")")"
+
+# Добавляем все изменения, чтобы flake их увидел
+git add -u
+
+# Пересобираем систему. Любые аргументы пробрасываются дальше
+# (например: ./rebuild.sh test  →  nixos-rebuild test)
+exec sudo nixos-rebuild "${1:-switch}" --flake .#nixos
