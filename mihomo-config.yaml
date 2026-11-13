@@ -5,6 +5,6 @@ bind-address: "*"
 mode: rule
 log-level: info
 ipv6: false
-external-controller: "127.0.0.1:9090"
+external-controller: "172.17.0.1:9090"
 external-ui: "zashboard"
 external-ui-url: "https://github.com/Zephyruso/zashboard/releases/latest/download/dist.zip"

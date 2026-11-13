@@ -60,16 +60,24 @@
       "--api.insecure=true"
       "--entrypoints.web.address=:80"
       "--log.level=INFO"
+      # Добавляем File Provider для чтения динамических конфигов
+      "--providers.file.directory=/etc/traefik/dynamic"
+      "--providers.file.watch=true"
     ];
     extraOptions = [
       "--network=traefik-net"
       "--security-opt=no-new-privileges:true"
+      "--add-host=host.docker.internal:host-gateway"
+    ];
+    # Монтируем папку с нашими yaml-файлами
+    volumes = [
+      "/home/nixos/l3rn4-nix/traefik-dynamic:/etc/traefik/dynamic:ro"
     ];
     dependsOn = [
       "docker-socket-proxy"
     ];
   };
-
+  
   # Guarantee containers start after the network is created
   systemd.services."docker-docker-socket-proxy".after = [ "traefik-network.service" ];
   systemd.services."docker-docker-socket-proxy".requires = [ "traefik-network.service" ];
@@ -83,3 +91,4 @@
     "docker-docker-socket-proxy.service"
   ];
 }
+

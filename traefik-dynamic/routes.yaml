@@ -1,0 +1,22 @@
+http:
+  routers:
+    # Красивый домен для дашборда Traefik
+    traefik-dashboard:
+      rule: "Host(`traefik.localhost`)"
+      entryPoints:
+        - web
+      service: api@internal
+
+    # Красивый домен для Zashboard
+    mihomo-dashboard:
+      rule: "Host(`mihomo.localhost`)"
+      entryPoints:
+        - web
+      service: mihomo-service
+
+  services:
+    mihomo-service:
+      loadBalancer:
+        servers:
+          # Идем через host.docker.internal на порт 9090
+          - url: "http://host.docker.internal:9090"
