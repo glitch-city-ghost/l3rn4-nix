@@ -24,5 +24,10 @@ The `mihomo` systemd service runs with `CAP_DAC_OVERRIDE` to bypass file permiss
 * **Risk:** This capability bypasses all file permission checks.
 * **Mitigation:** This is strictly confined by `ProtectSystem=strict` and `NoNewPrivileges`, meaning mihomo cannot write to system directories or escalate privileges.
 
+### 5. Traefik via Restricted Docker Socket Proxy
+Traefik does **not** have direct access to the Docker socket (`/var/run/docker.sock`). Instead, it communicates through a `docker-socket-proxy` (tecnativa/docker-socket-proxy) that exposes only the minimal required Docker API endpoints: `CONTAINERS`, `SERVICES`, and `NETWORKS`.
+* **Risk:** If the proxy is misconfigured, it could expose additional Docker API endpoints, increasing the attack surface.
+* **Mitigation:** The proxy is configured with explicit allow-lists (`CONTAINERS=1`, `SERVICES=1`, `NETWORKS=1`) and all other endpoints explicitly disabled (`=0`). The socket is mounted read-only. Traefik runs with `no-new-privileges:true`.
+
 ---
 *By using this configuration, you acknowledge these design decisions.*

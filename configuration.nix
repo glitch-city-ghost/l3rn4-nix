@@ -8,6 +8,7 @@
     ./modules/system.nix
     ./modules/wsl.nix
     ./modules/gc.nix
+    ./modules/traefik.nix
   ];
 
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
