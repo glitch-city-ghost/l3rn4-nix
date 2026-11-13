@@ -3,6 +3,5 @@
 *.pem
 *.env
 .env
-.env.*
 secrets/
 private-*.yaml

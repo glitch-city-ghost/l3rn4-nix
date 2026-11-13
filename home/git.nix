@@ -5,8 +5,8 @@
     enable = true;
     settings = {
       user = {
-        name = "glitch-city-ghost";
-        email = "43579195+glitch-city-ghost@users.noreply.github.com";
+        name = if (builtins.getEnv "GIT_USER_NAME" == "") then "user" else (builtins.getEnv "GIT_USER_NAME");
+        email = if (builtins.getEnv "GIT_USER_EMAIL" == "") then "user@localhost" else (builtins.getEnv "GIT_USER_EMAIL");
       };
       delta.navigate = true;
       delta.side-by-side = true;
