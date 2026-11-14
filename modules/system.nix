@@ -2,7 +2,7 @@
 
 {
   environment.systemPackages = with pkgs; [
-    curl wget jq openssl yq ripgrep fd bat eza fzf zoxide htop python3 nodejs
+    curl wget jq openssl yq ripgrep fd bat eza fzf zoxide htop python3 nodejs tree
   ];
 
   programs.direnv = {
