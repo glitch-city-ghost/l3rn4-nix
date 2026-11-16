@@ -11,5 +11,5 @@ external-ui-url: "https://github.com/Zephyruso/zashboard/releases/latest/downloa
 keep-alive-interval: 25
 
 rules:
-  - MATCH,AUTO-PROXY
-  
+  - MATCH,SMART-FALLBACK
+
