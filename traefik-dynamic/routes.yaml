@@ -1,3 +1,5 @@
+# Static routes for the Traefik file provider.
+# The Docker provider is disabled, so new containers must be added here.
 http:
   routers:
     # Красивый домен для дашборда Traefik
@@ -14,9 +16,33 @@ http:
         - web
       service: mihomo-service
 
+    # OpenCode Web UI
+    hydr4-agent:
+      rule: "Host(`agent.localhost`)"
+      entryPoints:
+        - web
+      service: hydr4-agent
+
+    # FreeLLMAPI dashboard / gateway
+    hydr4-aggregator:
+      rule: "Host(`api.localhost`)"
+      entryPoints:
+        - web
+      service: hydr4-aggregator
+
   services:
     mihomo-service:
       loadBalancer:
         servers:
           # Идем через host.docker.internal на порт 9090
           - url: "http://host.docker.internal:9090"
+
+    hydr4-agent:
+      loadBalancer:
+        servers:
+          - url: "http://hydr4-agent:4096"
+
+    hydr4-aggregator:
+      loadBalancer:
+        servers:
+          - url: "http://hydr4-aggregator:3001"
