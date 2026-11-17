@@ -24,11 +24,11 @@ http:
       service: hydr4-agent
 
     # FreeLLMAPI dashboard / gateway
-    hydr4-aggregator:
+    hydr4-gateway:
       rule: "Host(`api.localhost`)"
       entryPoints:
         - web
-      service: hydr4-aggregator
+      service: hydr4-gateway
 
   services:
     mihomo-service:
@@ -42,7 +42,7 @@ http:
         servers:
           - url: "http://hydr4-agent:4096"
 
-    hydr4-aggregator:
+    hydr4-gateway:
       loadBalancer:
         servers:
-          - url: "http://hydr4-aggregator:3001"
+          - url: "http://hydr4-gateway:3001"
