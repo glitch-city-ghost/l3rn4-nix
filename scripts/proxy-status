@@ -1,0 +1,432 @@
+#!/usr/bin/env bash
+# ==========================================================
+# l3rn4 :: proxy-status
+# Read-only live panel for mihomo (Clash Meta) + systemd.
+# Lives in the 4th pane of the `dash` tmux layout.
+#
+#   proxy-status              # live loop (Ctrl-C to exit)
+#   proxy-status --once       # single snapshot, no loop
+#   proxy-status -i 5         # refresh every 5 seconds
+#
+# Env:
+#   MIHOMO_API          http://172.17.0.1:9090
+#   MIHOMO_SECRET       ""            (external-controller secret)
+#   MIHOMO_PROXY_URL    http://127.0.0.1:7890
+#   MIHOMO_GROUP        AUTO-PROXY
+#   MIHOMO_CHECK_EVERY  30            (ticks; 0 disables egress check)
+# ==========================================================
+set -uo pipefail
+
+API="${MIHOMO_API:-http://172.17.0.1:9090}"
+API="${API%/}"
+SECRET="${MIHOMO_SECRET:-}"
+PROXY="${MIHOMO_PROXY_URL:-http://127.0.0.1:7890}"
+GROUP="${MIHOMO_GROUP:-AUTO-PROXY}"
+REFRESH="${MIHOMO_REFRESH:-2}"
+CHECK_EVERY="${MIHOMO_CHECK_EVERY:-30}"
+CHECK_API="${MIHOMO_CHECK_API:-http://ip-api.com/json?fields=status,query,city,country,isp}"
+TIMEOUT="${MIHOMO_TIMEOUT:-2}"
+ONCE=0
+
+while (($#)); do
+  case "$1" in
+    --once | -1 | once) ONCE=1 ;;
+    -i | --interval)
+      REFRESH="${2:?interval required}"
+      shift
+      ;;
+    --no-check) CHECK_EVERY=0 ;;
+    -h | --help | help)
+      sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'
+      exit 0
+      ;;
+    *)
+      printf 'proxy-status: unknown argument: %s\n' "$1" >&2
+      exit 2
+      ;;
+  esac
+  shift
+done
+
+[[ $REFRESH =~ ^[0-9]+([.][0-9]+)?$ ]] || REFRESH=2
+[[ $CHECK_EVERY =~ ^[0-9]+$ ]] || CHECK_EVERY=30
+
+command -v curl >/dev/null 2>&1 || { echo "proxy-status: curl is required" >&2; exit 1; }
+command -v jq >/dev/null 2>&1 || { echo "proxy-status: jq is required" >&2; exit 1; }
+
+if [[ -t 1 && -z ${NO_COLOR:-} ]]; then
+  E=$'\033'
+  RED="${E}[38;2;255;50;112m"
+  GREEN="${E}[38;2;0;255;156m"
+  CYAN="${E}[38;2;0;255;200m"
+  PURPLE="${E}[38;2;213;123;255m"
+  WHITE="${E}[38;2;238;255;255m"
+  DIM="${E}[38;2;103;102;179m"
+  HDR="${E}[48;2;51;18;21m${E}[38;2;255;0;85m${E}[1m"
+  RESET="${E}[0m"
+  HIDE="${E}[?25l"
+  SHOW="${E}[?25h"
+  ALT_ON="${E}[?1049h"
+  ALT_OFF="${E}[?1049l"
+  CLR="${E}[H${E}[2J"
+else
+  RED="" GREEN="" CYAN="" PURPLE="" WHITE=""
+  DIM="" HDR="" RESET="" HIDE="" SHOW="" ALT_ON="" ALT_OFF="" CLR=""
+fi
+
+AUTH=()
+[[ -n $SECRET ]] && AUTH=(-H "Authorization: Bearer $SECRET")
+
+TMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/proxy-status.XXXXXX") || exit 1
+CHECK_FILE="$TMP_DIR/egress.json"
+CHECK_TMP="$TMP_DIR/egress.new"
+CHECK_PID=""
+
+cleanup() {
+  if [[ -n $CHECK_PID ]] && kill -0 "$CHECK_PID" 2>/dev/null; then
+    kill "$CHECK_PID" 2>/dev/null
+  fi
+  rm -rf "$TMP_DIR"
+  if ((ONCE == 0)); then
+    printf '%s%s%s' "$RESET" "$SHOW" "$ALT_OFF"
+  fi
+  exit 0
+}
+trap cleanup EXIT
+trap 'exit 0' INT TERM
+
+api() {
+  curl -fsS --connect-timeout 1 --max-time "$TIMEOUT" "${AUTH[@]}" "$API$1" 2>/dev/null
+}
+
+num() {
+  local v=${1:-0}
+  [[ $v =~ ^[0-9]+$ ]] || v=0
+  printf '%s' "$v"
+}
+
+fmt_bytes() {
+  local b u=0 t=0
+  local units=(B KiB MiB GiB TiB PiB)
+  b=$(num "${1:-0}")
+  while ((b >= 1024 && u < 5)); do
+    t=$(((b % 1024) * 10 / 1024))
+    b=$((b / 1024))
+    u=$((u + 1))
+  done
+  if ((u == 0)); then
+    printf '%d %s' "$b" "${units[u]}"
+  else
+    printf '%d.%d %s' "$b" "$t" "${units[u]}"
+  fi
+}
+
+fmt_rate() {
+  fmt_bytes "${1:-0}"
+  printf '/s'
+}
+
+fit() {
+  local s=${1-} max=${2:-0}
+  s=${s//$'\n'/ }
+  s=${s//$'\r'/}
+  ((max < 1)) && return 0
+  if ((${#s} > max)); then
+    printf '%s…' "${s:0:max-1}"
+  else
+    printf '%s' "$s"
+  fi
+}
+
+port_open() {
+  local p=${1:-0}
+  ((p > 0)) || return 1
+  if command -v ss >/dev/null 2>&1; then
+    ss -Hltn "sport = :$p" 2>/dev/null | grep -q .
+  else
+    (exec 3<>"/dev/tcp/127.0.0.1/$p") 2>/dev/null
+  fi
+}
+
+systemd_state() {
+  command -v systemctl >/dev/null 2>&1 || { printf 'n/a'; return 0; }
+  local s
+  s=$(systemctl is-active mihomo 2>/dev/null) || true
+  printf '%s' "${s:-unknown}"
+}
+
+start_egress_check() {
+  ((CHECK_EVERY > 0)) || return 0
+  ((tick % CHECK_EVERY == 0)) || return 0
+  if [[ -n $CHECK_PID ]] && kill -0 "$CHECK_PID" 2>/dev/null; then
+    return 0
+  fi
+  (
+    if curl -fsS --noproxy '' --connect-timeout 2 --max-time 8 \
+      -x "$PROXY" "$CHECK_API" -o "$CHECK_TMP" 2>/dev/null; then
+      mv -f "$CHECK_TMP" "$CHECK_FILE"
+    else
+      printf '%s' '{"status":"fail"}' >"$CHECK_TMP"
+      mv -f "$CHECK_TMP" "$CHECK_FILE"
+    fi
+  ) &
+  CHECK_PID=$!
+}
+
+collect() {
+  local now_ns v cfg px cn c u d dt_ms
+
+  now_ns=$(date +%s%N)
+
+  if ((tick % 5 == 0)) || [[ -z $CTRL ]]; then
+    if v=$(api /version); then
+      CTRL=up
+      API_VER=$(jq -r '.version // "?"' <<<"$v" 2>/dev/null) || API_VER="?"
+      if cfg=$(api /configs); then
+        MODE=$(jq -r '.mode // "—"' <<<"$cfg" 2>/dev/null) || MODE="—"
+        MPORT=$(jq -r '."mixed-port" // .port // empty' <<<"$cfg" 2>/dev/null) || MPORT=""
+      fi
+      if px=$(api /proxies); then
+        IFS=$'\t' read -r NODE NODE_N < <(
+          jq -r --arg g "$GROUP" \
+            '(.proxies[$g] // {}) | [(.now // "—"), ((.all // []) | length)] | @tsv' \
+            <<<"$px" 2>/dev/null
+        ) || true
+        [[ -n ${NODE:-} ]] || NODE="—"
+        [[ -n ${NODE_N:-} ]] || NODE_N=0
+      fi
+    else
+      CTRL=down
+      API_VER=""
+      MODE=""
+      MPORT=""
+      NODE=""
+      NODE_N=0
+      UP_RATE=0
+      DOWN_RATE=0
+    fi
+  fi
+
+  [[ -n ${MPORT:-} ]] || MPORT="${MIHOMO_PORT:-7890}"
+  PORT="$MPORT"
+  if port_open "$PORT"; then LISTENING=yes; else LISTENING=no; fi
+  SVC=$(systemd_state)
+
+  if [[ $CTRL == up ]] && cn=$(api /connections); then
+    c=$(jq -r '.connections | length' <<<"$cn" 2>/dev/null) || c=0
+    u=$(jq -r '.uploadTotal // 0' <<<"$cn" 2>/dev/null) || u=0
+    d=$(jq -r '.downloadTotal // 0' <<<"$cn" 2>/dev/null) || d=0
+    CONNS=$(num "$c")
+    UP_TOTAL=$(num "$u")
+    DOWN_TOTAL=$(num "$d")
+
+    if ((PREV_NS > 0 && now_ns > PREV_NS)); then
+      dt_ms=$(((now_ns - PREV_NS) / 1000000))
+      ((dt_ms < 1)) && dt_ms=1
+      if ((UP_TOTAL >= PREV_UP)); then
+        UP_RATE=$(((UP_TOTAL - PREV_UP) * 1000 / dt_ms))
+      else
+        UP_RATE=0
+      fi
+      if ((DOWN_TOTAL >= PREV_DOWN)); then
+        DOWN_RATE=$(((DOWN_TOTAL - PREV_DOWN) * 1000 / dt_ms))
+      else
+        DOWN_RATE=0
+      fi
+    fi
+    PREV_NS=$now_ns
+    PREV_UP=$UP_TOTAL
+    PREV_DOWN=$DOWN_TOTAL
+  fi
+}
+
+rowline() {
+  local label=$1 color=$2 text=$3 max
+  max=$((W - 13))
+  ((max < 4)) && max=4
+  printf '  %s%-10s%s %s%s%s' "$DIM" "$label" "$RESET" "$color" "$(fit "$text" "$max")" "$RESET"
+}
+
+rowtext() {
+  local label=$1 color=$2 text=$3 max
+  max=$((W - 13))
+  ((max < 4)) && max=4
+  printf '  %s%-10s%s %s%s%s' "$DIM" "$label" "$RESET" "$color" "$(fit "$text" "$max")" "$RESET"
+}
+
+rule() {
+  local i out=""
+  for ((i = 0; i < W; i++)); do out+="─"; done
+  printf '%s%s' "$DIM" "$out"
+}
+
+emit() {
+  ((n < H)) || return 0
+  ((n > 0)) && printf '\n'
+  printf '%s%s' "$1" "$RESET"
+  n=$((n + 1))
+}
+
+render() {
+  local cols="" rows="" left clock pad ctrl node_txt etext foot up_txt down_txt
+  local st ip city country isp
+
+  if [[ -t 0 ]]; then
+    read -r rows cols < <(stty size 2>/dev/null) || true
+  fi
+  [[ $cols =~ ^[0-9]+$ ]] || cols=${COLUMNS:-80}
+  [[ $rows =~ ^[0-9]+$ ]] || rows=${LINES:-24}
+  if ((ONCE)) || [[ ! -t 1 ]]; then H=999; else H=$rows; fi
+  ((H < 3)) && H=3
+  ((cols > 118)) && cols=118
+  ((cols < 28)) && cols=28
+  W=$cols
+  n=0
+
+  ((ONCE == 0)) && printf '%s' "$CLR"
+
+  if ((W < 40)); then
+    left=' MIHOMO '
+    clock=" $(date +%H:%M) "
+  else
+    left=' MIHOMO :: l3rn4 proxy '
+    clock=" $(date +%H:%M:%S) "
+  fi
+  pad=$((W - ${#left} - ${#clock}))
+  ((pad < 0)) && pad=0
+  printf -v ctrl '%s%s%*s%s' "$HDR" "$left" "$pad" "" "$clock"
+  emit "$ctrl"
+  if ((H >= 12)); then emit "$(rule)"; fi
+
+  if [[ $SVC == active ]]; then
+    emit "$(rowline service "$GREEN" "● mihomo active")"
+  elif [[ $SVC == n/a ]]; then
+    emit "$(rowline service "$DIM" "● systemd n/a")"
+  else
+    emit "$(rowline service "$RED" "● mihomo $SVC")"
+  fi
+
+  if [[ $CTRL == up ]]; then
+    if ((W >= 44)); then
+      emit "$(rowline controller "$GREEN" "● ${API#*://}  $API_VER")"
+      if [[ $LISTENING == yes ]]; then
+        emit "$(rowline mixed "$GREEN" "● listening :$PORT  mode $MODE")"
+      else
+        emit "$(rowline mixed "$RED" "● closed :$PORT  mode $MODE")"
+      fi
+    else
+      emit "$(rowline controller "$GREEN" "● ${API#*://}")"
+      if [[ $LISTENING == yes ]]; then
+        emit "$(rowline mixed "$GREEN" "● :$PORT $MODE")"
+      else
+        emit "$(rowline mixed "$RED" "● closed :$PORT")"
+      fi
+    fi
+
+    if ((W >= 48)); then
+      node_txt="${NODE:-—} (${NODE_N:-0} in $GROUP)"
+    else
+      node_txt="${NODE:-—}"
+    fi
+    emit "$(rowline node "$PURPLE" "$node_txt")"
+
+    if ((W >= 44)); then
+      up_txt="↑ $(fmt_rate "${UP_RATE:-0}")  Σ $(fmt_bytes "${UP_TOTAL:-0}")"
+      down_txt="↓ $(fmt_rate "${DOWN_RATE:-0}")  Σ $(fmt_bytes "${DOWN_TOTAL:-0}")"
+    else
+      up_txt="↑ $(fmt_rate "${UP_RATE:-0}")"
+      down_txt="↓ $(fmt_rate "${DOWN_RATE:-0}")"
+    fi
+    emit "$(rowline upload "$GREEN" "$up_txt")"
+    emit "$(rowline download "$CYAN" "$down_txt")"
+
+    if [[ -s $CHECK_FILE ]]; then
+      IFS=$'\t' read -r st ip city country isp < <(
+        jq -r '[.status // "", .query // "", .city // "", .country // "", .isp // ""] | @tsv' \
+          "$CHECK_FILE" 2>/dev/null
+      ) || true
+      if [[ ${st:-} == success && -n ${ip:-} ]]; then
+        if ((W >= 52)); then
+          etext="$ip  ${city:-?}, ${country:-?}"
+        elif ((W >= 38)); then
+          etext="$ip  ${city:-?}"
+        else
+          etext="$ip"
+        fi
+        emit "$(rowline egress "$GREEN" "● $etext")"
+        if ((W >= 40)) && [[ -n ${isp:-} ]]; then
+          emit "$(rowline isp "$DIM" "$isp")"
+        fi
+      else
+        emit "$(rowline egress "$RED" "● proxied request failed")"
+      fi
+    elif ((CHECK_EVERY > 0)); then
+      emit "$(rowline egress "$DIM" "… checking via ${PROXY#*://}")"
+    else
+      emit "$(rowline egress "$DIM" "disabled (MIHOMO_CHECK_EVERY=0)")"
+    fi
+
+    emit "$(rowline conns "$WHITE" "${CONNS:-0} active")"
+  else
+    if ((W >= 44)); then
+      emit "$(rowline controller "$RED" "● ${API#*://}  unreachable")"
+    else
+      emit "$(rowline controller "$RED" "● unreachable")"
+    fi
+    if [[ $LISTENING == yes ]]; then
+      emit "$(rowline mixed "$GREEN" "● :$PORT")"
+    else
+      emit "$(rowline mixed "$RED" "● closed :$PORT")"
+    fi
+    emit "$(rowline node "$DIM" "—")"
+    emit "$(rowline conns "$DIM" "—")"
+    emit "$(rowline upload "$DIM" "—")"
+    emit "$(rowline download "$DIM" "—")"
+  fi
+
+  if ((H >= 13)); then emit "$(rule)"; fi
+  if ((H >= 14)); then
+    foot=" read-only · ${REFRESH}s refresh · Ctrl-C to exit "
+  elif ((H >= 10)); then
+    foot=" read-only · Ctrl-C to exit "
+  else
+    foot=""
+  fi
+  if [[ -n $foot ]]; then emit "$DIM$(fit "$foot" "$W")"; fi
+}
+
+tick=0
+CTRL=""
+API_VER=""
+MODE=""
+MPORT=""
+PORT="${MIHOMO_PORT:-7890}"
+NODE=""
+NODE_N=0
+CONNS=0
+UP_TOTAL=0
+DOWN_TOTAL=0
+UP_RATE=0
+DOWN_RATE=0
+PREV_NS=0
+PREV_UP=0
+PREV_DOWN=0
+SVC=""
+LISTENING=no
+W=80
+
+if ((ONCE)); then
+  collect
+  render
+  printf '\n'
+  exit 0
+fi
+
+printf '%s%s' "$ALT_ON" "$HIDE"
+while :; do
+  collect
+  render
+  start_egress_check
+  sleep "$REFRESH"
+  tick=$((tick + 1))
+done

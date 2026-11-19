@@ -1,0 +1,242 @@
+#!/usr/bin/env bash
+# ==========================================================
+# l3rn4 :: dash
+# Four-pane tmux dashboard for the Hydra environment.
+# Runs on its own tmux server socket, so it does not touch
+# your regular tmux sessions or config.
+#
+#   dash              attach or create (main layout)
+#   dash grid         attach or create (4 equal tiles)
+#   dash kill         stop the dashboard
+#   dash help
+#
+# Layout (main):
+#   +---------------------+--------------+
+#   |                     |  logs        |
+#   |  shell / agent      +--------------+
+#   |                     |  htop        |
+#   |                     +--------------+
+#   |                     |  proxy       |
+#   +---------------------+--------------+
+#
+# Env:
+#   DASH_SESSION     hydra
+#   DASH_SOCKET      l3rn4
+#   DASH_MAIN_CMD    ""            command for the big pane
+#   DASH_LOG_CMD     auto          logs command
+#   DASH_HTOP_CMD    "htop -d 15"
+#   DASH_STATUS_CMD  auto          "proxy-status" (snapshot detail)
+#   DASH_MAIN_WIDTH  62%
+#   DASH_TERM        tmux-256color
+# ==========================================================
+set -euo pipefail
+
+SELF=$(readlink -f "${BASH_SOURCE[0]}")
+SELF_DIR=$(dirname "$SELF")
+TMUX_BIN=${TMUX_BIN:-tmux}
+SOCKET=${DASH_SOCKET:-l3rn4}
+SESSION=${DASH_SESSION:-hydra}
+LAYOUT=${DASH_LAYOUT:-main}
+MAIN_WIDTH=${DASH_MAIN_WIDTH:-62%}
+TERM_NAME=${DASH_TERM:-tmux-256color}
+
+usage() {
+  cat <<'EOF'
+l3rn4 :: dash
+
+Usage:
+  dash            attach or create the main dashboard
+  dash grid       attach or create a 4-tile dashboard
+  dash kill       stop and remove the dashboard
+  dash help       this text
+
+Panes:
+  main    $SHELL (or $DASH_MAIN_CMD)
+  logs    journalctl -u mihomo, falls back to docker logs traefik
+  htop    htop -d 15
+  proxy   proxy-status (mihomo API snapshot)
+
+Keys:
+  C-b arrows      move between panes
+  C-b d           detach (dashboard keeps running)
+  C-b z           zoom a pane
+  C-b [           scroll/copy
+
+The dashboard uses tmux -L l3rn4, a separate socket:
+your other tmux sessions and ~/.config/tmux are not affected.
+EOF
+}
+
+die() {
+  printf '\e[38;2;255;50;112mdash: %s\e[0m\n' "$*" >&2
+  exit 1
+}
+
+# ---------------- internal pane launcher ----------------
+if [[ ${1:-} == __aux ]]; then
+  shift
+  label=${1:-pane}
+  shift || true
+  label=${label//[^[:alnum:]_-]/}
+  BASH_BIN=$(command -v bash || printf '/bin/sh')
+  PS1="\[\e[38;2;255;0;85m\][${label}]\[\e[0m\] \[\e[38;2;0;255;200m\]\w\[\e[0m\] ❯ "
+  export PS1
+  if (($#)); then
+    rc=0
+    "$@" || rc=$?
+    if ((rc != 0)); then
+      printf '\n\e[38;2;255;50;112m[%s] exited with %d\e[0m\n' "$label" "$rc"
+    fi
+  fi
+  printf '\e[38;2;103;102;179m[dash] %s finished; dropping to a shell. detach: C-b d\e[0m\n' "$label"
+  exec "$BASH_BIN" --noprofile --norc -i
+fi
+
+# ---------------- command line ----------------
+ACTION=attach
+while (($#)); do
+  case "$1" in
+    attach | up | start) ACTION=attach ;;
+    grid | tiles) LAYOUT=grid ;;
+    main | columns) LAYOUT=main ;;
+    kill | stop | down) ACTION="kill" ;;
+    help | -h | --help) usage; exit 0 ;;
+    *)
+      printf 'dash: unknown argument: %s\n\n' "$1" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+  shift
+done
+
+TM=( "$TMUX_BIN" -L "$SOCKET" )
+command -v "$TMUX_BIN" >/dev/null 2>&1 || die "tmux not found. Rebuild the system: ./nix-rebuild"
+"${TM[@]}" -V >/dev/null 2>&1 || die "cannot run tmux"
+
+if [[ $ACTION == kill ]]; then
+  "${TM[@]}" kill-session -t "$SESSION" 2>/dev/null || true
+  "${TM[@]}" kill-server 2>/dev/null || true
+  printf '\e[38;2;0;255;200mdash: dashboard stopped\e[0m\n'
+  exit 0
+fi
+
+if [[ -n ${TMUX:-} ]]; then
+  die "already inside tmux. Detach first (C-b d), then run dash from a plain terminal."
+fi
+
+if "${TM[@]}" has-session -t "$SESSION" 2>/dev/null; then
+  exec "${TM[@]}" attach-session -t "$SESSION"
+fi
+
+# ---------------- resolve pane commands ----------------
+MAIN_ARGS=()
+if [[ -n ${DASH_MAIN_CMD:-} ]]; then
+  read -r -a MAIN_ARGS <<<"$DASH_MAIN_CMD"
+fi
+
+LOG_ARGS=()
+if [[ -n ${DASH_LOG_CMD:-} ]]; then
+  read -r -a LOG_ARGS <<<"$DASH_LOG_CMD"
+elif [[ ${EUID} -eq 0 ]] || id -nG 2>/dev/null | tr ' ' '\n' | grep -qx systemd-journal; then
+  LOG_ARGS=(journalctl -fu mihomo -o short-iso --no-hostname)
+elif command -v sudo >/dev/null 2>&1 && sudo -n journalctl -n 0 --no-pager >/dev/null 2>&1; then
+  LOG_ARGS=(sudo journalctl -fu mihomo -o short-iso --no-hostname)
+elif command -v docker >/dev/null 2>&1; then
+  LOG_ARGS=(docker logs -f --tail=100 traefik)
+else
+  LOG_ARGS=(bash -c 'printf "dash: no log source (docker missing, journal not readable)\n"; sleep 3600')
+fi
+
+HTOP_ARGS=()
+if [[ -n ${DASH_HTOP_CMD:-} ]]; then
+  read -r -a HTOP_ARGS <<<"$DASH_HTOP_CMD"
+else
+  HTOP_ARGS=(htop -d 15)
+fi
+
+STATUS_ARGS=()
+if [[ -n ${DASH_STATUS_CMD:-} ]]; then
+  read -r -a STATUS_ARGS <<<"$DASH_STATUS_CMD"
+elif [[ -x $SELF_DIR/proxy-status ]]; then
+  STATUS_ARGS=( "$SELF_DIR/proxy-status" )
+elif command -v proxy-status >/dev/null 2>&1; then
+  STATUS_ARGS=(proxy-status)
+else
+  STATUS_ARGS=(bash -c 'printf "dash: proxy-status not found\n"; sleep 3600')
+fi
+
+aux_cmd() {
+  local label=$1
+  shift
+  local -a parts=( "$SELF" __aux "$label" )
+  local p out=""
+  (($#)) && parts+=( "$@" )
+  for p in "${parts[@]}"; do
+    printf -v p '%q' "$p"
+    out+="$p "
+  done
+  printf '%s' "${out% }"
+}
+
+# ---------------- build ----------------
+"${TM[@]}" new-session -d -s "$SESSION" -n dash -c "$HOME"
+
+main=$( "${TM[@]}" display-message -p -t "$SESSION:0" '#{pane_id}' )
+
+# Cosmetic options: failures are fine on older tmux builds.
+{
+  "${TM[@]}" set-option -s escape-time 0
+  "${TM[@]}" set-option -s focus-events on
+  "${TM[@]}" set-option -s default-terminal "$TERM_NAME"
+  "${TM[@]}" set-option -s history-limit 20000
+  "${TM[@]}" set-option -s allow-passthrough on
+  "${TM[@]}" set-option -sa terminal-features '*:RGB'
+  "${TM[@]}" set-option -t "$SESSION" mouse on
+  "${TM[@]}" set-option -t "$SESSION" prefix C-b
+  "${TM[@]}" set-option -t "$SESSION" status on
+  "${TM[@]}" set-option -t "$SESSION" status-interval 5
+  "${TM[@]}" set-option -t "$SESSION" status-style 'bg=#1d000a,fg=#FF0055'
+  "${TM[@]}" set-option -t "$SESSION" status-left ' #[bold]l3rn4#[nobold] :: hydra '
+  "${TM[@]}" set-option -t "$SESSION" status-left-length 30
+  "${TM[@]}" set-option -t "$SESSION" status-right ' #[fg=#6766b3]C-b d detach#[default]  %H:%M '
+  "${TM[@]}" set-option -t "$SESSION" status-right-length 40
+  "${TM[@]}" set-option -t "$SESSION" allow-rename off
+  "${TM[@]}" set-option -t "$SESSION" automatic-rename off
+  "${TM[@]}" set-window-option -t "$SESSION:0" pane-border-status top
+  "${TM[@]}" set-window-option -t "$SESSION:0" pane-border-format ' #[bold]#{pane_title}#[nobold] '
+  "${TM[@]}" set-window-option -t "$SESSION:0" pane-border-style 'fg=#563466'
+  "${TM[@]}" set-window-option -t "$SESSION:0" pane-active-border-style 'fg=#FF0055'
+  "${TM[@]}" set-window-option -t "$SESSION:0" window-status-current-style 'bg=#FF0055,fg=#120b10,bold'
+} >/dev/null 2>&1 || true
+
+if ((${#MAIN_ARGS[@]})); then
+  "${TM[@]}" respawn-pane -k -t "$main" -c "$HOME" "$(aux_cmd main "${MAIN_ARGS[@]}")"
+fi
+"${TM[@]}" select-pane -t "$main" -T "${DASH_MAIN_TITLE:-shell}"
+
+if [[ $LAYOUT == grid ]]; then
+  p_logs=$( "${TM[@]}" split-window -h -t "$main" -l 50% -c "$HOME" -P -F '#{pane_id}' \
+    "$(aux_cmd logs "${LOG_ARGS[@]}")" )
+  p_htop=$( "${TM[@]}" split-window -v -t "$main" -l 50% -c "$HOME" -P -F '#{pane_id}' \
+    "$(aux_cmd htop "${HTOP_ARGS[@]}")" )
+  p_proxy=$( "${TM[@]}" split-window -v -t "$p_logs" -l 50% -c "$HOME" -P -F '#{pane_id}' \
+    "$(aux_cmd proxy "${STATUS_ARGS[@]}")" )
+  "${TM[@]}" select-layout -t "$SESSION:0" tiled
+else
+  p_logs=$( "${TM[@]}" split-window -h -t "$main" -l 50% -c "$HOME" -P -F '#{pane_id}' \
+    "$(aux_cmd logs "${LOG_ARGS[@]}")" )
+  p_htop=$( "${TM[@]}" split-window -v -t "$p_logs" -l 50% -c "$HOME" -P -F '#{pane_id}' \
+    "$(aux_cmd htop "${HTOP_ARGS[@]}")" )
+  p_proxy=$( "${TM[@]}" split-window -v -t "$p_htop" -l 50% -c "$HOME" -P -F '#{pane_id}' \
+    "$(aux_cmd proxy "${STATUS_ARGS[@]}")" )
+  "${TM[@]}" select-layout -t "$SESSION:0" main-vertical
+  "${TM[@]}" resize-pane -t "$main" -x "$MAIN_WIDTH"
+fi
+
+"${TM[@]}" select-pane -t "$p_logs" -T logs
+"${TM[@]}" select-pane -t "$p_htop" -T htop
+"${TM[@]}" select-pane -t "$p_proxy" -T proxy
+"${TM[@]}" select-pane -t "$main"
+
+exec "${TM[@]}" attach-session -t "$SESSION"

@@ -66,6 +66,7 @@ graph TD
 *   `cybrcore.toml` — Cyberpunk Starship prompt. Because if you're going to hack the mainframe, do it with style.
 *   `fastfetch.jsonc` — Minimalist system fetch.
 *   `nix-rebuild` — A custom wrapper that stages changes and rebuilds NixOS safely.
+*   `scripts/dash` / `scripts/proxy-status` — The tmux dashboard and its proxy status pane.
 *   `modules/` — *(Coming soon)* Docker isolation and zerogateway systemd services.
 
 ---
@@ -82,6 +83,36 @@ cd l3rn4-nix
 # Awaken the beast (requires NixOS with flakes enabled)
 ./nix-rebuild
 ```
+
+## 📊 Dashboard (PoC)
+
+A four-pane tmux dashboard for daily driving:
+
+| Pane | Content |
+| --- | --- |
+| main | interactive shell (`$SHELL`) or any TUI, e.g. `opencode` |
+| logs | `journalctl -fu mihomo`, falling back to `docker logs traefik` |
+| htop | `htop -d 15` |
+| proxy | read-only mihomo snapshot: service, controller, port, node, connections, traffic, egress |
+
+```bash
+./nix-rebuild        # tmux, dash and proxy-status are installed by home-manager
+dash                 # create or attach (main layout: big left pane, 3 stacked on the right)
+dash grid            # same, but 4 equal tiles (applies at creation)
+dash kill            # stop it
+```
+
+Overrides:
+
+```bash
+DASH_MAIN_CMD=opencode dash
+DASH_LOG_CMD='docker logs -f traefik' dash
+MIHOMO_API=http://127.0.0.1:9090 dash
+```
+
+`dash` runs on a dedicated tmux socket (`-L l3rn4`), so it does not disturb your regular tmux sessions. It starts nothing at boot and opens no new ports; `proxy-status` only polls the existing mihomo controller (`172.17.0.1:9090`) and, once a minute, the same `ip-api.com` endpoint as `check-mihomo`.
+
+If the logs pane falls back to Traefik, the `nixos` user cannot read the system journal: add it to the `systemd-journal` group, or set `DASH_LOG_CMD`.
 
 ---
 
