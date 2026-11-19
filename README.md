@@ -66,6 +66,7 @@ graph TD
 *   `cybrcore.toml` — Cyberpunk Starship prompt. Because if you're going to hack the mainframe, do it with style.
 *   `fastfetch.jsonc` — Minimalist system fetch.
 *   `nix-rebuild` — A custom wrapper that stages changes and rebuilds NixOS safely.
+*   `dash.conf` — Dashboard layout and pane commands for the tmux dashboard.
 *   `scripts/dash` / `scripts/proxy-status` — The tmux dashboard and its proxy status pane.
 *   `modules/` — *(Coming soon)* Docker isolation and zerogateway systemd services.
 
@@ -86,33 +87,62 @@ cd l3rn4-nix
 
 ## 📊 Dashboard (PoC)
 
-A four-pane tmux dashboard for daily driving:
+A tmux dashboard for daily driving. Its layout and every pane command live in
+`dash.conf`; the first pane is your interactive shell/agent, the rest are
+ordinary processes:
 
-| Pane | Content |
+| Pane | Default |
 | --- | --- |
-| main | interactive shell (`$SHELL`) or any TUI, e.g. `opencode` |
-| logs | `journalctl -fu mihomo`, falling back to `docker logs traefik` |
+| shell | `$SHELL` — type here, or start a TUI such as `opencode` |
+| logs | `journalctl -fu mihomo` |
 | htop | `htop -d 15` |
 | proxy | read-only mihomo snapshot: service, controller, port, node, connections, traffic, egress |
 
 ```bash
-./nix-rebuild        # tmux, dash and proxy-status are installed by home-manager
-dash                 # create or attach (main layout: big left pane, 3 stacked on the right)
-dash grid            # same, but 4 equal tiles (applies at creation)
-dash kill            # stop it
+./nix-rebuild
+dash init            # copy dash.conf to ~/.config/l3rn4/dash.conf (once)
+$EDITOR ~/.config/l3rn4/dash.conf
+dash                 # create or attach
+
+dash grid            # equal tiles, ignores the config layout (creation only)
+dash config          # show the active config, layout and resolved panes
+dash kill            # stop the dashboard
 ```
 
-Overrides:
+Panes are lines; the first one is the main pane in `main` layouts:
 
 ```bash
-DASH_MAIN_CMD=opencode dash
-DASH_LOG_CMD='docker logs -f traefik' dash
-MIHOMO_API=http://127.0.0.1:9090 dash
+pane "shell" "${SHELL:-bash}"
+pane "logs"  journalctl -fu mihomo -o short-iso --no-hostname
+pane "htop"  htop -d 15
+pane "proxy" proxy-status
 ```
 
-`dash` runs on a dedicated tmux socket (`-L l3rn4`), so it does not disturb your regular tmux sessions. It starts nothing at boot and opens no new ports; `proxy-status` only polls the existing mihomo controller (`172.17.0.1:9090`) and, once a minute, the same `ip-api.com` endpoint as `check-mihomo`.
+Anything executable works. For pipes or redirection wrap it in `bash -c`:
 
-If the logs pane falls back to Traefik, the `nixos` user cannot read the system journal: add it to the `systemd-journal` group, or set `DASH_LOG_CMD`.
+```bash
+pane "errors" bash -c 'journalctl -fu mihomo | grep --line-buffered -Ei "error|fail"'
+```
+
+The file also sets `dash_layout` (`main`, `main-horizontal`, `grid`,
+`horizontal`, `vertical`), `dash_main_width` / `dash_main_height`,
+`dash_focus`, `dash_prefix`, `dash_mouse`, `dash_status`, `dash_borders`,
+`dash_term`, `dash_workdir` and `dash_fallback_shell`. It is sourced by bash,
+so the environment can be tuned there too:
+
+```bash
+export MIHOMO_GROUP="SMART-FALLBACK"
+export MIHOMO_API="http://172.17.0.1:9090 http://127.0.0.1:9090"
+```
+
+Keep multiple profiles with `DASH_CONFIG=~/.config/l3rn4/dash.dev.conf dash`.
+
+The packaged `dash.conf` is read-only in the Nix store; a copy in
+`~/.config/l3rn4/` wins and is never overwritten by a rebuild.
+
+`dash` runs on a dedicated tmux socket (`-L l3rn4`), starts nothing at boot and
+opens no new ports; `proxy-status` only polls the existing mihomo controller
+and, once a minute, the same `ip-api.com` endpoint as `check-mihomo`.
 
 ---
 

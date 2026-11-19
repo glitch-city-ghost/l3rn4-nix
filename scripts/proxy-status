@@ -17,11 +17,18 @@
 # ==========================================================
 set -uo pipefail
 
-API="${MIHOMO_API:-http://172.17.0.1:9090}"
-API="${API%/}"
+DEFAULT_API="http://172.17.0.1:9090 http://127.0.0.1:9090"
+API_LIST=()
+IFS=', ' read -r -a API_LIST <<<"${MIHOMO_API:-$DEFAULT_API}"
+[[ -n ${API_LIST[0]:-} ]] || API_LIST=("http://127.0.0.1:9090")
+for i in "${!API_LIST[@]}"; do
+  API_LIST[i]="${API_LIST[i]%/}"
+done
+API="${API_LIST[0]}"
+API_BODY=""
 SECRET="${MIHOMO_SECRET:-}"
 PROXY="${MIHOMO_PROXY_URL:-http://127.0.0.1:7890}"
-GROUP="${MIHOMO_GROUP:-AUTO-PROXY}"
+GROUP="${MIHOMO_GROUP:-SMART-FALLBACK}"
 REFRESH="${MIHOMO_REFRESH:-2}"
 CHECK_EVERY="${MIHOMO_CHECK_EVERY:-30}"
 CHECK_API="${MIHOMO_CHECK_API:-http://ip-api.com/json?fields=status,query,city,country,isp}"
@@ -99,6 +106,19 @@ api() {
   curl -fsS --connect-timeout 1 --max-time "$TIMEOUT" "${AUTH[@]}" "$API$1" 2>/dev/null
 }
 
+probe_api() {
+  local u body
+  for u in "${API_LIST[@]}"; do
+    [[ -n $u ]] || continue
+    if body=$(curl -fsS --connect-timeout 1 --max-time "$TIMEOUT" "${AUTH[@]}" "$u/version" 2>/dev/null); then
+      API=$u
+      API_BODY=$body
+      return 0
+    fi
+  done
+  return 1
+}
+
 num() {
   local v=${1:-0}
   [[ $v =~ ^[0-9]+$ ]] || v=0
@@ -174,14 +194,14 @@ start_egress_check() {
 }
 
 collect() {
-  local now_ns v cfg px cn c u d dt_ms
+  local now_ns cfg px cn c u d dt_ms
 
   now_ns=$(date +%s%N)
 
   if ((tick % 5 == 0)) || [[ -z $CTRL ]]; then
-    if v=$(api /version); then
+    if probe_api; then
       CTRL=up
-      API_VER=$(jq -r '.version // "?"' <<<"$v" 2>/dev/null) || API_VER="?"
+      API_VER=$(jq -r '.version // "?"' <<<"$API_BODY" 2>/dev/null) || API_VER="?"
       if cfg=$(api /configs); then
         MODE=$(jq -r '.mode // "—"' <<<"$cfg" 2>/dev/null) || MODE="—"
         MPORT=$(jq -r '."mixed-port" // .port // empty' <<<"$cfg" 2>/dev/null) || MPORT=""
