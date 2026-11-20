@@ -1,53 +1,54 @@
 # ==========================================================
 # l3rn4 :: btop theme :: cyberpunk
-# Colors mirror cyberpunk-palette.yaml.
+# Pink-forward mapping of cyberpunk-palette.yaml.
+# Base uses status_bg (#1d000a) and warmer pink tones.
 # ==========================================================
 
 # Base / text -------------------------------------------------
-theme[main_bg]="#120b10"          # base.bg
+theme[main_bg]="#1d000a"          # surface.status_bg (pink-tinted dark)
 theme[main_fg]="#EEFFFF"         # text.light
-theme[title]="#FF0055"           # text.main
+theme[title]="#FF0055"           # text.main (hot pink)
 theme[hi_fg]="#00FFC8"           # accents.cyan
 
 # Selection / muted -------------------------------------------
-theme[selected_bg]="#563466"     # surface.selection
-theme[selected_fg]="#EEFFFF"     # text.light
+theme[selected_bg]="#FF0055"     # text.main (hot pink selection)
+theme[selected_fg]="#120b10"     # base.bg
 theme[inactive_fg]="#6766b3"     # text.muted
-theme[graph_text]="#76C1FF"      # accents.blue
-theme[meter_bg]="#2B3E5A"        # surface.non_text
+theme[graph_text]="#FF4081"      # accents.pink
+theme[meter_bg]="#563466"        # surface.selection
 
 # Meters and boxes -------------------------------------------
-theme[proc_misc]="#00FF9C"       # accents.green
-theme[cpu_box]="#FF4081"         # accents.pink
-theme[mem_box]="#d57bff"         # accents.purple
+theme[proc_misc]="#FF4081"       # accents.pink
+theme[cpu_box]="#FF0055"         # text.main (hot pink)
+theme[mem_box]="#FF4081"         # accents.pink
 theme[net_box]="#00FFC8"         # accents.cyan
-theme[proc_box]="#c592ff"        # text.heading
-theme[div_line]="#2B3E5A"        # surface.non_text
+theme[proc_box]="#ff3270"        # accents.red
+theme[div_line]="#563466"        # surface.selection
 
-# Temperatures -----------------------------------------------
-theme[temp_start]="#00FF9C"      # accents.green
+# Temperatures: cool -> warm -> hot --------------------------
+theme[temp_start]="#00FFC8"      # accents.cyan
 theme[temp_mid]="#fffc58"        # accents.yellow
 theme[temp_end]="#ff3270"        # accents.red
 
-# CPU --------------------------------------------------------
-theme[cpu_start]="#00FFC8"       # accents.cyan
-theme[cpu_mid]="#c592ff"         # text.heading
-theme[cpu_end]="#FF0055"         # text.main
+# CPU: pink at idle, red under load --------------------------
+theme[cpu_start]="#FF4081"       # accents.pink
+theme[cpu_mid]="#FF0055"         # text.main
+theme[cpu_end]="#ff3270"         # accents.red
 
 # Memory / disk: free ----------------------------------------
 theme[free_start]="#00FFC8"      # accents.cyan
 theme[free_mid]="#76C1FF"        # accents.blue
-theme[free_end]="#d57bff"        # accents.purple
+theme[free_end]="#FF4081"        # accents.pink
 
 # Memory / disk: cached --------------------------------------
-theme[cached_start]="#6766b3"    # text.muted
-theme[cached_mid]="#76C1FF"      # accents.blue
-theme[cached_end]="#d57bff"      # accents.purple
+theme[cached_start]="#563466"    # surface.selection
+theme[cached_mid]="#c592ff"      # text.heading
+theme[cached_end]="#FF4081"      # accents.pink
 
 # Memory / disk: available -----------------------------------
 theme[available_start]="#00FF9C" # accents.green
 theme[available_mid]="#00FFC8"   # accents.cyan
-theme[available_end]="#76C1FF"   # accents.blue
+theme[available_end]="#FF4081"   # accents.pink
 
 # Memory / disk: used ----------------------------------------
 theme[used_start]="#fffc58"      # accents.yellow
@@ -55,24 +56,24 @@ theme[used_mid]="#FF4081"        # accents.pink
 theme[used_end]="#ff3270"        # accents.red
 
 # Network: download ------------------------------------------
-theme[download_start]="#00FFC8"  # accents.cyan
-theme[download_mid]="#76C1FF"    # accents.blue
-theme[download_end]="#d57bff"    # accents.purple
+theme[download_start]="#FF4081"  # accents.pink
+theme[download_mid]="#d57bff"    # accents.purple
+theme[download_end]="#00FFC8"    # accents.cyan
 
 # Network: upload --------------------------------------------
-theme[upload_start]="#00FF9C"    # accents.green
+theme[upload_start]="#FF4081"    # accents.pink
 theme[upload_mid]="#fffc58"      # accents.yellow
-theme[upload_end]="#FF0055"      # text.main
+theme[upload_end]="#00FF9C"      # accents.green
 
-# Process list -----------------------------------------------
-theme[process_start]="#c592ff"   # text.heading
-theme[process_mid]="#FF4081"     # accents.pink
-theme[process_end]="#ff3270"     # accents.red
+# Process list gradient (btop uses proc_*, not process_*) ---
+theme[proc_start]="#FF4081"      # accents.pink
+theme[proc_mid]="#FF0055"        # text.main (hot pink)
+theme[proc_end]="#fffc58"        # accents.yellow
 
 # Process banners (btop >= 1.4) ------------------------------
 theme[proc_pause_bg]="#ff3270"    # accents.red
-theme[proc_follow_bg]="#76C1FF"  # accents.blue
-theme[proc_banner_bg]="#372963"  # surface.todo_bg
-theme[proc_banner_fg]="#EEFFFF"  # text.light
-theme[followed_bg]="#76C1FF"     # accents.blue
-theme[followed_fg]="#120b10"     # base.bg
+theme[proc_follow_bg]="#00FFC8"   # accents.cyan
+theme[proc_banner_bg]="#563466"   # surface.selection
+theme[proc_banner_fg]="#EEFFFF"   # text.light
+theme[followed_bg]="#FF4081"      # accents.pink
+theme[followed_fg]="#120b10"      # base.bg
