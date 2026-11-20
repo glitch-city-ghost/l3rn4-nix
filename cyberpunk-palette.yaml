@@ -10,7 +10,7 @@ meta:
 
 # --- Base (Фоны) ---
 base:
-  bg:       "#120b10"   # Основной фон (Normal bg)
+  bg:       "#130b10"   # Основной фон (Normal bg)
   bg_alt:   "#1a1018"   # Альтернативный фон
   bg_dark:  "#000000"   # Абсолютно черный (для CursorLine)
   bg_deep:  "#140007"   # Глубокий фон (для Pmenu)
@@ -45,7 +45,7 @@ accents:
 # --- ANSI (Маппинг для терминалов) ---
 # Это используется в Windows Terminal, Alacritty, Foot и др.
 ansi:
-  black:          "#120b10"
+  black:          "#130b10"
   red:            "#ff3270"
   green:          "#00FF9C"
   yellow:         "#fffc58"
