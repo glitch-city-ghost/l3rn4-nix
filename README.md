@@ -135,6 +135,12 @@ export MIHOMO_GROUP="SMART-FALLBACK"
 export MIHOMO_API="http://172.17.0.1:9090 http://127.0.0.1:9090"
 ```
 
+If the proxy pane says `auth required`, put the controller secret there too
+(don't commit it): `export MIHOMO_SECRET="..."`, or put it in
+`~/.config/l3rn4/mihomo.secret` (mode 600) and leave the config clean. If it
+says `unreachable`, check `ss -tlnp | grep 9090` and the merged controller
+config in `/var/lib/private/mihomo/config.yaml`.
+
 Keep multiple profiles with `DASH_CONFIG=~/.config/l3rn4/dash.dev.conf dash`.
 
 The packaged `dash.conf` is read-only in the Nix store; a copy in
