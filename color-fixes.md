@@ -8,8 +8,8 @@
 
 | Component | Source File(s) | Colors from Palette | **Divergent / Missing / Hardcoded** |
 |-----------|----------------|---------------------|-------------------------------------|
-| **Vim (editor)** | `vim-cyberpunk` plugin (external repo) | **24/31 match** | 7 colors not in palette (`#101116`, `#ff1745`, `#00ff84`, `#000000` cursorline, `#140007` bg, `#FF4081` tabs) |
-| **Airline (Vim status)** | `vim-cyberpunk` plugin | **18/18 match** | ✅ All mapped (uses same core colors) |
+| **Vim (editor)** | `themes/cyberpunk/vim/colors/cyberpunk.vim` (generated) | **31/31 match** | ✅ **COMPLETE** — Generated from palette, only intentional diff: Normal bg `#130b10` (palette) vs old `#120b10` |
+| **Airline (Vim status)** | `themes/cyberpunk/vim/autoload/airline/themes/cyberpunk.vim` (generated) | **18/18 match** | ✅ **COMPLETE** — Generated from palette |
 | **Starship** | `cybrcore.toml` | **22/26 match** | 8 custom shades (`*2` dark variants + orange) |
 | **Fastfetch** | `fastfetch.jsonc` | **12/12 match** | ⚠️ `#120b10` (old base.bg, should be `#130b10`) |
 | **btop** | `btop/themes/cyberpunk.theme` | **38/38 match** | ✅ All mapped via semantic aliases |
@@ -20,100 +20,48 @@
 
 ---
 
-## 🔍 DETAILED FINDINGS BY COMPONENT
+## ✅ STEP 1 COMPLETE: VIM & AIRLINE MIGRATION
+
+**Status**: **DONE** — Fully migrated to local generated theme from `cyberpunk-palette.yaml`
+
+### What Was Done
+
+| Task | Commit | Status |
+|------|--------|--------|
+| Added missing palette entries: `surface.vert_split`, `accents.diff_delete`, `accents.diff_text` | `dae1958` | ✅ |
+| Created generator: `generators/generate-vim-theme.py` | `63712bd` | ✅ |
+| Generated `themes/cyberpunk/vim/colors/cyberpunk.vim` (60 highlights) | `63712bd` | ✅ |
+| Generated `themes/cyberpunk/vim/autoload/airline/themes/cyberpunk.vim` + `autoload/airline/cyberpunk.vim` | `63712bd` | ✅ |
+| Migrated `home/vim.nix` to local plugin (`src = ../themes/cyberpunk/vim`) | `63712bd` | ✅ |
+| Removed external `vim-cyberpunk` dependency (`fetchFromGitHub` + `postInstall` hack) | `63712bd` | ✅ |
+| Restored `vim-airline-themes` (required for Airline's onedark inheritance) | `63712bd` | ✅ |
+
+### Verification Results
+
+```
+Colorscheme:  60/60 highlight groups match original plugin
+              (1 intentional: Normal bg = #130b10 per palette vs #120b10)
+
+Airline:      7/7 hex colors match exactly
+              Both autoload/airline/ and autoload/airline/themes/ populated
+              onedark inheritance preserved
+```
 
 ---
 
-### 1. 🖥 VIM — `vim-cyberpunk` plugin (external, pinned at `2c009b8`)
-
-**Status**: **24/31 colors match palette** — 7 divergences
-
-| Vim Highlight | Plugin Value | Palette Key | Palette Value | Match? | Notes |
-|---------------|--------------|-------------|---------------|--------|-------|
-| **Normal fg** | `#FF0055` | `text.main` | `#FF0055` | ✅ | Acid pink text |
-| **Normal bg** | `#120b10` | `base.bg` | `#130b10` | ❌ **OLD** | Should be `#130b10` |
-| **Visual bg** | `#563466` | `surface.selection` | `#563466` | ✅ | |
-| **ColorColumn** | `#182333` | `surface.column_bg` | `#182333` | ✅ | **USED!** (was "unused") |
-| **LineNr** | `#FF0055` | `text.main` | `#FF0055` | ✅ | |
-| **SignColumn** | `#00FFC8` | `accents.cyan` | `#00FFC8` | ✅ | |
-| **DiffDelete** | `#ff1745` | — | — | ❌ **Custom** | Bright red, not in palette |
-| **DiffText** | `#00ff84` | — | — | ❌ **Custom** | Bright green, not in palette |
-| **VertSplit** | `#FF0055` / `#101116` | — | — | ❌ **Custom** | `#101116` not in palette |
-| **IncSearch** | `#283593` | `surface.search_bg` | `#283593` | ✅ | **USED!** |
-| **Search** | `#283593` | `surface.search_bg` | `#283593` | ✅ | **USED!** |
-| **MatchParen** | `#FF0055` / `#00FFC8` | `text.main` / `accents.cyan` | ✅ | |
-| **NonText** | `#2B3E5A` | `surface.non_text` | `#2B3E5A` | ✅ | **USED!** |
-| **Whitespace** | `#2B3E5A` | `surface.non_text` | `#2B3E5A` | ✅ | **USED!** |
-| **WildMenu** | `#00FFC8` | `accents.cyan` | ✅ | |
-| **Directory** | `#00FFC8` | `accents.cyan` | ✅ | |
-| **Title** | `#c592ff` | `text.heading` | `#c592ff` | ✅ | |
-| **Cursor** | `#00FFC8` | `accents.cyan` | ✅ | |
-| **CursorLineNr** | `#140007` / `#00FFC8` | `base.bg_deep` / `accents.cyan` | ✅ | **USED!** |
-| **CursorLine** | `#000000` OR `#140007`/`#FF0055` | `base.bg_dark` / `base.bg_deep` | ⚠️ | Option-driven |
-| **Comment** | `#6766b3` | `text.muted` | `#6766b3` | ✅ | |
-| **String** | `#76C1FF` | `accents.blue` | `#76C1FF` | ✅ | |
-| **Number/Float/Boolean/Character** | `#fffc58` | `accents.yellow` | `#fffc58` | ✅ | |
-| **Conditional/Repeat/Label/Exception/Operator/Keyword/Statement** | `#76C1FF` | `accents.blue` | ✅ | |
-| **StorageClass** | `#d57bff` | `accents.purple` | `#d57bff` | ✅ | |
-| **Function** | `#d57bff` | `accents.purple` | ✅ | |
-| **Identifier** | `#EEFFFF` | `text.light` | `#EEFFFF` | ✅ | |
-| **PreProc** | `#00FF9C` | `accents.green` | `#00FF9C` | ✅ | |
-| **Type/Structure/Typedef** | `#00FF9C` | `accents.green` | ✅ | |
-| **Todo** | `#00FF9C` / `#372963` | `accents.green` / `surface.todo_bg` | ✅ | **USED!** |
-| **Error** | `#ff3270` | `accents.red` | `#ff3270` | ✅ | |
-| **WarningMsg** | `#009550` | `accents.teal` | `#009550` | ✅ | **USED!** |
-| **Special** | `#00FF9C` | `accents.green` | ✅ | |
-| **Tag** | `#00FF9C` | `accents.green` | ✅ | |
-| **Pmenu** | `#ff0055` / `#140007` | `text.main` / `base.bg_deep` | ✅ | **USED!** |
-| **PmenuSel** | `#140007` / `#ff0055` | `base.bg_deep` / `text.main` | ✅ | **USED!** |
-| **StatusLine** | `#ff0055` / `#1d000a` | `text.main` / `surface.status_bg` | ✅ | |
-| **StatusLineNC** | `#ff0055` / `#000000` | `text.main` / `base.bg_dark` | ✅ | |
-| **TabLine** | `#FF4081` | `accents.pink` | `#FF4081` | ✅ | |
-| **TabLineSel** | `#FF4081` | `accents.pink` | ✅ | |
-| **Folded/FoldColumn** | `#00FFC8` | `accents.cyan` | ✅ | |
-
-> **Key Discovery**: The "unused" palette colors **ARE used by Vim**:
-> - `base.bg_deep` (`#140007`) → CursorLineNr, Pmenu, PmenuSel
-> - `surface.column_bg` (`#182333`) → ColorColumn
-> - `surface.search_bg` (`#283593`) → IncSearch, Search, Substitute
-> - `surface.non_text` (`#2B3E5A`) → NonText, Whitespace
-> - `surface.todo_bg` (`#372963`) → Todo
-> - `base.bg_dark` (`#000000`) → CursorLine (option), StatusLineNC
-> - `accents.teal` (`#009550`) → WarningMsg
-> - `ansi.bright_white` (`#FFFFFF`) → **NOT used** (only truly unused)
-
-> **Divergences**:
-> 1. **Normal bg**: `#120b10` (old) vs `#130b10` (palette)
-> 2. **DiffDelete**: `#ff1745` (custom bright red)
-> 3. **DiffText**: `#00ff84` (custom bright green)
-> 4. **VertSplit bg**: `#101116` (custom dark gray)
-> 5. **CursorLine option**: uses `#000000` directly
-> 6. **TabLine**: uses `accents.pink` (`#FF4081`) — correct
+## 🔍 DETAILED FINDINGS BY COMPONENT (REMAINING WORK)
 
 ---
 
-### 2. 📟 AIRLINE (Vim Statusline) — Same Plugin
+### 2. 📟 AIRLINE (Vim Statusline) — **COMPLETE** ✅
 
-**Status**: **18/18 match** ✅
-
-| Airline Element | Plugin Value | Palette Key | Match? |
-|-----------------|--------------|-------------|--------|
-| Normal bg | `#140007` | `base.bg_deep` | ✅ |
-| Normal fg | `#FF0055` | `text.main` | ✅ |
-| Insert fg | `#76C1FF` | `accents.blue` | ✅ |
-| Replace fg | `#FFFC58` | `accents.yellow` | ✅ |
-| Visual fg | `#D57BFF` | `accents.purple` | ✅ |
-| Inactive bg | `#140007` / `#FF0055` | `base.bg_deep` / `text.main` | ✅ |
-| Warning | `#FF0055` / `#140007` | `text.main` / `base.bg_deep` | ✅ |
-| Error | `#FF0055` / `#140007` | `text.main` / `base.bg_deep` | ✅ |
-
-> Airline theme uses **only palette colors** — clean mapping.
+Generated from palette, matches original plugin exactly.
 
 ---
 
 ### 3. 🚀 STARSHIP — `cybrcore.toml`
 
-**Status**: **22/26 match** — 8 custom shades
+**Status**: **22/26 match** — 8 custom shades (intentional)
 
 | cybrcore Key | Value | Palette Source | Match? |
 |--------------|-------|----------------|--------|
@@ -155,7 +103,7 @@
 | Title user | `#FF0055` | `text.main` | ✅ |
 | Title host | `#d57bff` | `accents.purple` | ✅ |
 | Separator | `#FF0055` | `text.main` | ✅ |
-| ANSI black | `#120b10` | `base.bg` | ❌ **OLD** → `#130b10` |
+| **ANSI black** | `#120b10` | `base.bg` | ❌ **OLD** → `#130b10` |
 | ANSI red | `#ff3270` | `accents.red` | ✅ |
 | ANSI green | `#00FF9C` | `accents.green` | ✅ |
 | ANSI yellow | `#fffc58` | `accents.yellow` | ✅ |
@@ -189,7 +137,7 @@ All colors use semantic aliases (e.g., `surface.status_bg`, `text.main`, `accent
 | Pane border | 413 | `#563466` | `surface.selection` | ✅ |
 | Active border | 414 | `#FF0055` | `text.main` | ✅ |
 | Active window bg | 415 | `#FF0055` | `text.main` | ✅ |
-| Active window fg | 415 | `#120b10` | `base.bg` | ❌ **OLD** → `#130b10` |
+| **Active window fg** | 415 | `#120b10` | `base.bg` | ❌ **OLD** → `#130b10` |
 
 ---
 
@@ -238,7 +186,7 @@ delta.syntax-theme = "TwoDark";  # Built-in, NOT our palette
 
 | Palette Key | Used By |
 |-------------|---------|
-| `base.bg` (`#130b10`) | Starship, Fastfetch (stale), Vim (stale), Dash (stale) |
+| `base.bg` (`#130b10`) | Starship, **Fastfetch (stale)**, **Dash (stale)**, **Vim (now correct)** |
 | `base.bg_alt` (`#1a1018`) | Starship |
 | `base.bg_dark` (`#000000`) | Vim (CursorLine, StatusLineNC) |
 | `base.bg_deep` (`#140007`) | Vim (CursorLineNr, Pmenu, Airline) |
@@ -248,6 +196,7 @@ delta.syntax-theme = "TwoDark";  # Built-in, NOT our palette
 | `surface.search_bg` (`#283593`) | Vim (IncSearch, Search) |
 | `surface.non_text` (`#2B3E5A`) | Vim (NonText, Whitespace) |
 | `surface.todo_bg` (`#372963`) | Vim (Todo) |
+| `surface.vert_split` (`#563466`) | **NEW** — Vim (VertSplit) |
 | `text.main` (`#FF0055`) | **Everywhere** (primary accent) |
 | `text.light` (`#EEFFFF`) | Starship, Fastfetch, btop, Vim (Identifier), Proxy, Check-mihomo |
 | `text.muted` (`#6766b3`) | Starship, Fastfetch (bright_black), btop, Vim (Comment), Dash, Proxy, Check-mihomo |
@@ -260,6 +209,8 @@ delta.syntax-theme = "TwoDark";  # Built-in, NOT our palette
 | `accents.red` (`#ff3270`) | Starship, Fastfetch, btop, Vim (Error), Dash, Proxy, Check-mihomo |
 | `accents.pink` (`#FF4081`) | Starship (Tabs), btop, Vim (TabLine), Airline |
 | `accents.teal` (`#009550`) | Vim (WarningMsg) |
+| `accents.diff_delete` (`#ff1745`) | **NEW** — Vim (DiffDelete) |
+| `accents.diff_text` (`#00ff84`) | **NEW** — Vim (DiffText) |
 | `ansi.bright_white` (`#FFFFFF`) | **NOWHERE** |
 
 ---
@@ -270,25 +221,21 @@ delta.syntax-theme = "TwoDark";  # Built-in, NOT our palette
 |-----|-----|--------|
 | `ansi.bright_white` | `#FFFFFF` | Pure white — our lightest is `#EEFFFF` (icy white) |
 
-> **All other "previously unused" surface/base colors ARE used by Vim.** The palette was more complete than we thought.
+> **All other surface/base colors ARE used by Vim.** The palette was more complete than we thought.
 
 ---
 
-## 🔧 ACTIONABLE FIXES (Priority Order)
+## 🔧 ACTIONABLE FIXES (Priority Order) — REMAINING WORK
 
 | Priority | Component | File | Change |
 |----------|-----------|------|--------|
-| **CRITICAL** | Vim | `vim-cyberpunk/colors/cyberpunk.vim` (external) | Normal bg: `#120b10` → `#130b10` |
 | **HIGH** | Fastfetch | `fastfetch.jsonc` | ANSI black: `#120b10` → `#130b10` |
 | **HIGH** | Dash | `scripts/dash` line 415 | Active window fg: `#120b10` → `#130b10` |
-| **MEDIUM** | Vim | `vim-cyberpunk` plugin | DiffDelete: `#ff1745` → `accents.red` `#ff3270` |
-| **MEDIUM** | Vim | `vim-cyberpunk` plugin | DiffText: `#00ff84` → `accents.green` `#00FF9C` |
-| **MEDIUM** | Vim | `vim-cyberpunk` plugin | VertSplit bg: `#101116` → `surface.selection` `#563466` or `base.bg` |
 | **MEDIUM** | Proxy Status | `scripts/proxy-status` | HDR bg: `#331215` → `surface.status_bg` `#1d000a`; RED → `#ff3270` |
 | **MEDIUM** | Check Mihomo | `scripts/check-mihomo.sh` | Error color: `#FF3270` → `#ff3270` |
 | **LOW** | Starship | `cybrcore.toml` | Document 8 extended colors as intentional |
 | **LOW** | Delta | `home/git.nix` | Generate custom delta theme from palette |
-| **ARCH** | Vim | — | Generate colorscheme from palette.nix (unify) |
+| **ARCH** | All | — | Single generator: `palette.nix` → all configs |
 
 ---
 
@@ -297,8 +244,19 @@ delta.syntax-theme = "TwoDark";  # Built-in, NOT our palette
 **The palette IS comprehensive** — it covers Vim's needs (surface.* colors were NOT dead weight). The only truly unused entry is `ansi.bright_white` (`#FFFFFF`).
 
 **The drift comes from:**
-1. **External Vim plugin** pinned at old commit (uses `#120b10`)
+1. ~~**External Vim plugin** pinned at old commit (uses `#120b10`)~~ → **FIXED: Now generated locally**
 2. **Manual duplication** in 6 files instead of generation
 3. **Starship's semantic extensions** (dark variants, orange) — intentional
 
 **End goal**: Single `palette.nix` → generates all configs (Starship TOML, btop theme, fastfetch JSON, Vim colorscheme, dash/proxy-status bash colors, Delta theme).
+
+---
+
+## 📝 UPDATE LOG
+
+- **2026-11-20**: Step 1 complete — Vim & Airline fully migrated to generated theme from `cyberpunk-palette.yaml`
+  - Palette extended with `surface.vert_split`, `accents.diff_delete`, `accents.diff_text`
+  - Generator: `generators/generate-vim-theme.py`
+  - Output: `themes/cyberpunk/vim/`
+  - Nix: `home/vim.nix` uses local plugin
+  - All verification passed (60/60 highlights, 7/7 Airline colors)
