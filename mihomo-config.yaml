@@ -10,6 +10,3 @@ external-ui: "zashboard"
 external-ui-url: "https://github.com/Zephyruso/zashboard/releases/latest/download/dist.zip"
 keep-alive-interval: 25
 
-rules:
-  - MATCH,SMART-FALLBACK
-
