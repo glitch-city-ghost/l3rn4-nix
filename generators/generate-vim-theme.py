@@ -279,8 +279,10 @@ def main():
     
     # Ensure output directories exist
     colors_dir = OUT_DIR / "colors"
-    airline_dir = OUT_DIR / "autoload" / "airline" / "themes"
+    airline_themes_dir = OUT_DIR / "autoload" / "airline" / "themes"
+    airline_dir = OUT_DIR / "autoload" / "airline"
     colors_dir.mkdir(parents=True, exist_ok=True)
+    airline_themes_dir.mkdir(parents=True, exist_ok=True)
     airline_dir.mkdir(parents=True, exist_ok=True)
     
     # Generate colorscheme
@@ -289,10 +291,13 @@ def main():
     
     # Generate Airline theme
     airline = generate_airline(palette)
+    # Write to BOTH locations (original plugin had both, postInstall copied between them)
+    (airline_themes_dir / "cyberpunk.vim").write_text(airline)
     (airline_dir / "cyberpunk.vim").write_text(airline)
     
     print(f"✅ Generated Vim theme in {OUT_DIR}")
     print(f"   - {colors_dir}/cyberpunk.vim")
+    print(f"   - {airline_themes_dir}/cyberpunk.vim")
     print(f"   - {airline_dir}/cyberpunk.vim")
 
 if __name__ == "__main__":
