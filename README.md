@@ -67,6 +67,7 @@ graph TD
 *   `fastfetch.jsonc` — Minimalist system fetch.
 *   `nix-rebuild` — A custom wrapper that stages changes and rebuilds NixOS safely.
 *   `dash.conf` — Dashboard layout and pane commands for the tmux dashboard.
+*   `btop/` — btop config and the `cyberpunk` theme.
 *   `scripts/dash` / `scripts/proxy-status` — The tmux dashboard and its proxy status pane.
 *   `modules/` — *(Coming soon)* Docker isolation and zerogateway systemd services.
 
@@ -95,7 +96,7 @@ ordinary processes:
 | --- | --- |
 | shell | `$SHELL` — type here, or start a TUI such as `opencode` |
 | logs | `journalctl -fu mihomo` |
-| htop | `htop -d 15` |
+| btop | `btop` with the `cyberpunk` theme; process list, no CPU/mem/net boxes |
 | proxy | read-only mihomo snapshot: service, controller, port, node, connections, traffic, egress |
 
 ```bash
@@ -114,7 +115,7 @@ Panes are lines; the first one is the main pane in `main` layouts:
 ```bash
 pane "shell" "${SHELL:-bash}"
 pane "logs"  journalctl -fu mihomo -o short-iso --no-hostname
-pane "htop"  htop -d 15
+pane "btop"  btop --force-utf
 pane "proxy" proxy-status
 ```
 
@@ -123,6 +124,14 @@ Anything executable works. For pipes or redirection wrap it in `bash -c`:
 ```bash
 pane "errors" bash -c 'journalctl -fu mihomo | grep --line-buffered -Ei "error|fail"'
 ```
+
+The repo ships `btop/btop.conf` and `btop/themes/cyberpunk.theme`; home-manager
+installs them under `~/.config/btop/`. The theme uses the colors of
+`cyberpunk-palette.yaml`; the shipped config shows only the process box,
+because the dashboard pane is narrow. Its process box needs 16 rows, so
+`dash_tall_pane` / `dash_tall_height` grow the `btop` pane in the `main`
+layout. In a shorter window, zoom the pane with `<prefix> z`. `htop` remains
+installed as a fallback.
 
 The file also sets `dash_layout` (`main`, `main-horizontal`, `grid`,
 `horizontal`, `vertical`), `dash_main_width` / `dash_main_height`,
