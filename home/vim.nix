@@ -14,6 +14,7 @@ in
     plugins = with pkgs.vimPlugins; [
       cyberpunk-vim
       vim-airline
+      vim-airline-themes
       nerdtree
     ];
     extraConfig = builtins.readFile ../vimrc;
