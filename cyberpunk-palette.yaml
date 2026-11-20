@@ -23,6 +23,7 @@ surface:
   search_bg:  "#283593"   # Фон поиска (IncSearch)
   non_text:   "#2B3E5A"   # Непечатаемые символы
   todo_bg:    "#372963"   # Фон Todo
+  vert_split: "#101116"   # Вертикальный сплиттер (VertSplit)
 
 # --- Text (Текст) ---
 text:
@@ -33,14 +34,16 @@ text:
 
 # --- Accents (Синтаксис и ANSI-цвета) ---
 accents:
-  blue:       "#76C1FF"   # Строки, операторы
-  purple:     "#d57bff"   # Функции, классы
-  cyan:       "#00FFC8"   # Директории, свернутый текст
-  green:      "#00FF9C"   # Типы данных, препроцессор
-  yellow:     "#fffc58"   # Числа, логические значения
-  red:        "#ff3270"   # Ошибки (Diagnostics)
-  pink:       "#FF4081"   # Вкладки (TabLine)
-  teal:       "#009550"   # Предупреждения (Diagnostics)
+  blue:        "#76C1FF"   # Строки, операторы
+  purple:      "#d57bff"   # Функции, классы
+  cyan:        "#00FFC8"   # Директории, свернутый текст
+  green:       "#00FF9C"   # Типы данных, препроцессор
+  yellow:      "#fffc58"   # Числа, логические значения
+  red:         "#ff3270"   # Ошибки (Diagnostics)
+  pink:        "#FF4081"   # Вкладки (TabLine)
+  teal:        "#009550"   # Предупреждения (Diagnostics)
+  diff_delete: "#FF1745"   # Удаленные строки в diff (DiffDelete)
+  diff_text:   "#00FF84"   # Измененный текст в diff (DiffText)
 
 # --- ANSI (Маппинг для терминалов) ---
 # Это используется в Windows Terminal, Alacritty, Foot и др.
