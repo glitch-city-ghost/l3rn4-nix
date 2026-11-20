@@ -1,0 +1,78 @@
+# ==========================================================
+# l3rn4 :: btop theme :: cyberpunk
+# Colors mirror cyberpunk-palette.yaml.
+# ==========================================================
+
+# Base / text -------------------------------------------------
+theme[main_bg]="#120b10"          # base.bg
+theme[main_fg]="#EEFFFF"         # text.light
+theme[title]="#FF0055"           # text.main
+theme[hi_fg]="#00FFC8"           # accents.cyan
+
+# Selection / muted -------------------------------------------
+theme[selected_bg]="#563466"     # surface.selection
+theme[selected_fg]="#EEFFFF"     # text.light
+theme[inactive_fg]="#6766b3"     # text.muted
+theme[graph_text]="#76C1FF"      # accents.blue
+theme[meter_bg]="#2B3E5A"        # surface.non_text
+
+# Meters and boxes -------------------------------------------
+theme[proc_misc]="#00FF9C"       # accents.green
+theme[cpu_box]="#FF4081"         # accents.pink
+theme[mem_box]="#d57bff"         # accents.purple
+theme[net_box]="#00FFC8"         # accents.cyan
+theme[proc_box]="#c592ff"        # text.heading
+theme[div_line]="#2B3E5A"        # surface.non_text
+
+# Temperatures -----------------------------------------------
+theme[temp_start]="#00FF9C"      # accents.green
+theme[temp_mid]="#fffc58"        # accents.yellow
+theme[temp_end]="#ff3270"        # accents.red
+
+# CPU --------------------------------------------------------
+theme[cpu_start]="#00FFC8"       # accents.cyan
+theme[cpu_mid]="#c592ff"         # text.heading
+theme[cpu_end]="#FF0055"         # text.main
+
+# Memory / disk: free ----------------------------------------
+theme[free_start]="#00FFC8"      # accents.cyan
+theme[free_mid]="#76C1FF"        # accents.blue
+theme[free_end]="#d57bff"        # accents.purple
+
+# Memory / disk: cached --------------------------------------
+theme[cached_start]="#6766b3"    # text.muted
+theme[cached_mid]="#76C1FF"      # accents.blue
+theme[cached_end]="#d57bff"      # accents.purple
+
+# Memory / disk: available -----------------------------------
+theme[available_start]="#00FF9C" # accents.green
+theme[available_mid]="#00FFC8"   # accents.cyan
+theme[available_end]="#76C1FF"   # accents.blue
+
+# Memory / disk: used ----------------------------------------
+theme[used_start]="#fffc58"      # accents.yellow
+theme[used_mid]="#FF4081"        # accents.pink
+theme[used_end]="#ff3270"        # accents.red
+
+# Network: download ------------------------------------------
+theme[download_start]="#00FFC8"  # accents.cyan
+theme[download_mid]="#76C1FF"    # accents.blue
+theme[download_end]="#d57bff"    # accents.purple
+
+# Network: upload --------------------------------------------
+theme[upload_start]="#00FF9C"    # accents.green
+theme[upload_mid]="#fffc58"      # accents.yellow
+theme[upload_end]="#FF0055"      # text.main
+
+# Process list -----------------------------------------------
+theme[process_start]="#c592ff"   # text.heading
+theme[process_mid]="#FF4081"     # accents.pink
+theme[process_end]="#ff3270"     # accents.red
+
+# Process banners (btop >= 1.4) ------------------------------
+theme[proc_pause_bg]="#ff3270"    # accents.red
+theme[proc_follow_bg]="#76C1FF"  # accents.blue
+theme[proc_banner_bg]="#372963"  # surface.todo_bg
+theme[proc_banner_fg]="#EEFFFF"  # text.light
+theme[followed_bg]="#76C1FF"     # accents.blue
+theme[followed_fg]="#120b10"     # base.bg

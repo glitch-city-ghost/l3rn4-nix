@@ -5,6 +5,7 @@
     ./home/git.nix
     ./home/zsh.nix
     ./home/vim.nix
+    ./home/btop.nix
     ./home/packages.nix
   ];
 
