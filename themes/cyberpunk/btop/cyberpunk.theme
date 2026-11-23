@@ -12,7 +12,7 @@ theme[hi_fg]="#00FFC8"           # accents.cyan
 
 # Selection / muted -------------------------------------------
 theme[selected_bg]="#FF0055"     # text.main (hot pink selection)
-theme[selected_fg]="#120b10"     # base.bg
+theme[selected_fg]="#130b10"     # base.bg
 theme[inactive_fg]="#6766b3"     # text.muted
 theme[graph_text]="#FF4081"      # accents.pink
 theme[meter_bg]="#563466"        # surface.selection
@@ -76,4 +76,4 @@ theme[proc_follow_bg]="#00FFC8"   # accents.cyan
 theme[proc_banner_bg]="#563466"   # surface.selection
 theme[proc_banner_fg]="#EEFFFF"   # text.light
 theme[followed_bg]="#FF4081"      # accents.pink
-theme[followed_fg]="#120b10"      # base.bg
+theme[followed_fg]="#130b10"      # base.bg

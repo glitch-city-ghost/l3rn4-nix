@@ -64,10 +64,12 @@ graph TD
 
 *   `flake.nix` / `configuration.nix` — The system's DNA. Fully declarative.
 *   `cybrcore.toml` — Cyberpunk Starship prompt. Because if you're going to hack the mainframe, do it with style.
-*   `fastfetch.jsonc` — Minimalist system fetch.
+*   `generators/` — template renderers (`generate-all.py`; `palette.py` is the engine).
+*   `templates/` — human-readable config files with `@section.key@` palette placeholders.
+*   `themes/cyberpunk/fastfetch/config.jsonc` — Minimalist system fetch (generated).
 *   `nix-rebuild` — A custom wrapper that stages changes and rebuilds NixOS safely.
 *   `dash.conf` — Dashboard layout and pane commands for the tmux dashboard.
-*   `btop/` — btop config and the `cyberpunk` theme.
+*   `btop/` — btop config (the theme is generated under `themes/cyberpunk/btop/`).
 *   `scripts/dash` / `scripts/proxy-status` — The tmux dashboard and its proxy status pane.
 *   `modules/` — *(Coming soon)* Docker isolation and zerogateway systemd services.
 
@@ -125,8 +127,9 @@ Anything executable works. For pipes or redirection wrap it in `bash -c`:
 pane "errors" bash -c 'journalctl -fu mihomo | grep --line-buffered -Ei "error|fail"'
 ```
 
-The repo ships `btop/btop.conf` and `btop/themes/cyberpunk.theme`; home-manager
-installs them under `~/.config/btop/`. The theme uses the colors of
+The repo ships `btop/btop.conf` and the generated theme at
+`themes/cyberpunk/btop/cyberpunk.theme`; home-manager installs them under
+`~/.config/btop/`. The theme uses the colors of
 `cyberpunk-palette.yaml`; the shipped config shows only the process box,
 because the dashboard pane is narrow. Its process box needs 16 rows, so
 `dash_tall_pane` / `dash_tall_height` grow the `btop` pane in the `main`

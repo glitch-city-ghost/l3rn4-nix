@@ -21,5 +21,6 @@ in
 
   fonts.fontconfig.enable = true;
 
-  xdg.configFile."fastfetch/config.jsonc".source = ../fastfetch.jsonc;
+  xdg.configFile."fastfetch/config.jsonc".source =
+    ../themes/cyberpunk/fastfetch/config.jsonc;
 }

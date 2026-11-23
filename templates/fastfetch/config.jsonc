@@ -4,8 +4,8 @@
     "type": "small",
     "source": "nixos",
     "color": {
-      "1": "#FF0055", // Кислотно-розовый
-      "2": "#76C1FF"  // Холодный синий
+      "1": "@text.main@", // Кислотно-розовый
+      "2": "@accents.blue@"  // Холодный синий
     },
     "padding": {
       "top": 1,
@@ -15,22 +15,22 @@
   "display": {
     "separator": "   ",
     "color": {
-      "keys": "#FF0055",   // Заголовки - розовые
-      "output": "#EEFFFF"  // Значения - ледяные белые (как идентификаторы в Vim)
+      "keys": "@text.main@",   // Заголовки - розовые
+      "output": "@text.light@"  // Значения - ледяные белые (как идентификаторы в Vim)
     }
   },
   "modules": [
     {
       "type": "title",
       "color": {
-        "user": "#FF0055", // Пользователь - розовый
-        "host": "#d57bff"  // Хост - фиолетовый
+        "user": "@text.main@", // Пользователь - розовый
+        "host": "@accents.purple@"  // Хост - фиолетовый
       }
     },
     {
       "type": "separator",
       "string": "──────────────────────────────",
-      "color": "#FF0055"
+      "color": "@text.main@"
     },
     "os",
     "kernel",
@@ -53,14 +53,14 @@
       "block": true,
       "paddingLeft": 2,
       "colors": [
-        "#120b10", // black
-        "#ff3270", // red
-        "#00FF9C", // green (только для палитры внизу)
-        "#fffc58", // yellow
-        "#76C1FF", // blue
-        "#d57bff", // magenta
-        "#00FFC8", // cyan
-        "#EEFFFF"  // white
+        "@ansi.black@", // black
+        "@ansi.red@", // red
+        "@ansi.green@", // green (только для палитры внизу)
+        "@ansi.yellow@", // yellow
+        "@ansi.blue@", // blue
+        "@ansi.magenta@", // magenta
+        "@ansi.cyan@", // cyan
+        "@ansi.white@"  // white
       ]
     }
   ]
