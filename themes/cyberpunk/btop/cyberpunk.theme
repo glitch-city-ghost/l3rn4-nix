@@ -1,79 +1,84 @@
 # ==========================================================
 # l3rn4 :: btop theme :: cyberpunk
-# Pink-forward mapping of cyberpunk-palette.yaml.
-# Base uses status_bg (#1d000a) and warmer pink tones.
+#
+# Palette: cyberpunk-palette.yaml
+# Canvas: base.bg, text: text.light, titles: text.main.
+# Frames are one quiet violet (text.muted) so the hot pink and
+# cyan accents read as highlights instead of a rainbow.
+# Gradients follow the palette's semantics: cyan/blue = cool,
+# green = headroom, yellow -> pink -> red = pressure.
 # ==========================================================
 
 # Base / text -------------------------------------------------
-theme[main_bg]="#1d000a"          # surface.status_bg (pink-tinted dark)
-theme[main_fg]="#EEFFFF"         # text.light
-theme[title]="#FF0055"           # text.main (hot pink)
-theme[hi_fg]="#00FFC8"           # accents.cyan
+theme[main_bg]="#130b10"           # base.bg (canonical canvas)
+theme[main_fg]="#EEFFFF"       # text.light
+theme[title]="#FF0055"          # text.main (hot pink)
+theme[hi_fg]="#00FFC8"       # accents.cyan
 
 # Selection / muted -------------------------------------------
-theme[selected_bg]="#FF0055"     # text.main (hot pink selection)
-theme[selected_fg]="#130b10"     # base.bg
-theme[inactive_fg]="#6766b3"     # text.muted
-theme[graph_text]="#FF4081"      # accents.pink
-theme[meter_bg]="#563466"        # surface.selection
+theme[selected_bg]="#563466"  # surface.selection
+theme[selected_fg]="#EEFFFF"          # text.light
+theme[inactive_fg]="#6766b3"          # text.muted
+theme[graph_text]="#6766b3"           # text.muted
+theme[meter_bg]="#182333"       # surface.column_bg
 
-# Meters and boxes -------------------------------------------
-theme[proc_misc]="#FF4081"       # accents.pink
-theme[cpu_box]="#FF0055"         # text.main (hot pink)
-theme[mem_box]="#FF4081"         # accents.pink
-theme[net_box]="#00FFC8"         # accents.cyan
-theme[proc_box]="#ff3270"        # accents.red
-theme[div_line]="#563466"        # surface.selection
+# Boxes: one quiet violet frame, pink titles -------------------
+theme[proc_misc]="#76C1FF"       # accents.blue
+theme[cpu_box]="#6766b3"           # text.muted
+theme[mem_box]="#6766b3"           # text.muted
+theme[net_box]="#6766b3"           # text.muted
+theme[proc_box]="#6766b3"          # text.muted
+theme[div_line]="#563466"   # surface.selection
 
-# Temperatures: cool -> warm -> hot --------------------------
-theme[temp_start]="#00FFC8"      # accents.cyan
-theme[temp_mid]="#fffc58"        # accents.yellow
-theme[temp_end]="#ff3270"        # accents.red
+# Temperature: cool -> warm -> hot -----------------------------
+theme[temp_start]="#76C1FF"      # accents.blue
+theme[temp_mid]="#d57bff"      # accents.purple
+theme[temp_end]="#ff3270"         # accents.red
 
-# CPU: pink at idle, red under load --------------------------
-theme[cpu_start]="#FF4081"       # accents.pink
-theme[cpu_mid]="#FF0055"         # text.main
-theme[cpu_end]="#ff3270"         # accents.red
+# CPU: idle -> busy -> saturated -------------------------------
+theme[cpu_start]="#00FFC8"       # accents.cyan
+theme[cpu_mid]="#FF0055"            # text.main
+theme[cpu_end]="#ff3270"          # accents.red
 
-# Memory / disk: free ----------------------------------------
-theme[free_start]="#00FFC8"      # accents.cyan
-theme[free_mid]="#76C1FF"        # accents.blue
-theme[free_end]="#FF4081"        # accents.pink
+# Memory / disk: free ------------------------------------------
+theme[free_start]="#009550"      # accents.teal
+theme[free_mid]="#00FF9C"       # accents.green
+theme[free_end]="#00FFC8"        # accents.cyan
 
-# Memory / disk: cached --------------------------------------
-theme[cached_start]="#563466"    # surface.selection
-theme[cached_mid]="#c592ff"      # text.heading
-theme[cached_end]="#FF4081"      # accents.pink
+# Memory / disk: cached ----------------------------------------
+theme[cached_start]="#563466"  # surface.selection
+theme[cached_mid]="#c592ff"          # text.heading
+theme[cached_end]="#d57bff"        # accents.purple
 
-# Memory / disk: available -----------------------------------
-theme[available_start]="#00FF9C" # accents.green
-theme[available_mid]="#00FFC8"   # accents.cyan
-theme[available_end]="#FF4081"   # accents.pink
+# Memory / disk: available -------------------------------------
+theme[available_start]="#00FF9C"  # accents.green
+theme[available_mid]="#00FFC8"     # accents.cyan
+theme[available_end]="#76C1FF"     # accents.blue
 
-# Memory / disk: used ----------------------------------------
+# Memory / disk: used ------------------------------------------
 theme[used_start]="#fffc58"      # accents.yellow
-theme[used_mid]="#FF4081"        # accents.pink
-theme[used_end]="#ff3270"        # accents.red
+theme[used_mid]="#FF4081"          # accents.pink
+theme[used_end]="#ff3270"           # accents.red
 
-# Network: download ------------------------------------------
-theme[download_start]="#FF4081"  # accents.pink
-theme[download_mid]="#d57bff"    # accents.purple
-theme[download_end]="#00FFC8"    # accents.cyan
+# Network: download (cool) -------------------------------------
+theme[download_start]="#76C1FF"    # accents.blue
+theme[download_mid]="#00FFC8"      # accents.cyan
+theme[download_end]="#00FF9C"     # accents.green
 
-# Network: upload --------------------------------------------
-theme[upload_start]="#FF4081"    # accents.pink
-theme[upload_mid]="#fffc58"      # accents.yellow
-theme[upload_end]="#00FF9C"      # accents.green
+# Network: upload (warm) ---------------------------------------
+theme[upload_start]="#d57bff"    # accents.purple
+theme[upload_mid]="#FF4081"        # accents.pink
+theme[upload_end]="#ff3270"         # accents.red
 
-# Process list gradient (btop uses proc_*, not process_*) ---
-theme[proc_start]="#FF4081"      # accents.pink
-theme[proc_mid]="#FF0055"        # text.main (hot pink)
-theme[proc_end]="#fffc58"        # accents.yellow
+# Process list gradient (1.4.x spelling: process_*) ------------
+theme[process_start]="#6766b3"       # text.muted (idle)
+theme[process_mid]="#FF4081"       # accents.pink (busy)
+theme[process_end]="#ff3270"        # accents.red
 
-# Process banners (btop >= 1.4) ------------------------------
-theme[proc_pause_bg]="#ff3270"    # accents.red
-theme[proc_follow_bg]="#00FFC8"   # accents.cyan
-theme[proc_banner_bg]="#563466"   # surface.selection
-theme[proc_banner_fg]="#EEFFFF"   # text.light
-theme[followed_bg]="#FF4081"      # accents.pink
-theme[followed_fg]="#130b10"      # base.bg
+# Process banners (btop >= 1.4) -------------------------------
+theme[proc_pause_bg]="#372963"       # surface.todo_bg
+theme[proc_follow_bg]="#283593"    # surface.search_bg
+theme[proc_banner_bg]="#563466"    # surface.selection
+theme[proc_banner_fg]="#EEFFFF"           # text.light
+theme[followed_bg]="#c592ff"            # text.heading
+theme[followed_fg]="#130b10"                 # base.bg
