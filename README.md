@@ -140,11 +140,11 @@ therefore empty. `terminal_sync` is off too, as a guard against Windows
 Terminal/ConPTY stalls; re-enable it if your terminal handles synchronized
 output correctly.
 
-The dashboard pane is narrow, so all four boxes may not fit there. The process
-box alone needs 16 rows; `dash_tall_pane` / `dash_tall_height` can grow the
-`btop` pane in the `main` layout (raise `dash_tall_height` if btop reports the
-terminal is too small). Otherwise zoom the pane with `<prefix> z`. `htop`
-remains installed as a fallback.
+The dashboard pane is narrow, so all four boxes may not fit there. The `btop`
+pane is 24 rows tall; `dash_tall_pane` / `dash_tall_height` set it, and the
+two side panes keep at least 13 rows (`dash_side_height`). If btop reports
+the terminal is too small, raise `dash_tall_height` or zoom the pane with
+`<prefix> z`. `htop` remains installed as a fallback.
 
 The file also sets `dash_layout` (`main`, `main-horizontal`, `grid`,
 `horizontal`, `vertical`), `dash_main_width` / `dash_main_height`,

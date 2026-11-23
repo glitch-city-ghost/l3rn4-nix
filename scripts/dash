@@ -178,11 +178,11 @@ source "$CONFIG"
 SESSION=${DASH_SESSION:-${dash_session:-hydra}}
 SOCKET=${DASH_SOCKET:-${dash_socket:-l3rn4}}
 LAYOUT=${LAYOUT_OVERRIDE:-${DASH_LAYOUT:-${dash_layout:-main}}}
-MAIN_WIDTH=${DASH_MAIN_WIDTH:-${dash_main_width:-62%}}
+MAIN_WIDTH=${DASH_MAIN_WIDTH:-${dash_main_width:-50%}}
 MAIN_HEIGHT=${DASH_MAIN_HEIGHT:-${dash_main_height:-45%}}
 TALL_PANE=${DASH_TALL_PANE:-${dash_tall_pane:-btop}}
-TALL_HEIGHT=${DASH_TALL_HEIGHT:-${dash_tall_height:-16}}
-SIDE_HEIGHT=${DASH_SIDE_HEIGHT:-${dash_side_height:-9}}
+TALL_HEIGHT=${DASH_TALL_HEIGHT:-${dash_tall_height:-24}}
+SIDE_HEIGHT=${DASH_SIDE_HEIGHT:-${dash_side_height:-13}}
 PREFIX=${DASH_PREFIX:-${dash_prefix:-C-b}}
 MOUSE=${DASH_MOUSE:-${dash_mouse:-on}}
 STATUS_BAR=${DASH_STATUS:-${dash_status:-on}}
@@ -263,10 +263,10 @@ esac
 
 [[ $FOCUS =~ ^[0-9]+$ ]] || FOCUS=0
 (( FOCUS < ${#PANE_TITLES[@]} )) || FOCUS=0
-[[ $TALL_HEIGHT =~ ^[0-9]+$ ]] || TALL_HEIGHT=16
-(( TALL_HEIGHT < 1 )) && TALL_HEIGHT=16
-[[ $SIDE_HEIGHT =~ ^[0-9]+$ ]] || SIDE_HEIGHT=9
-(( SIDE_HEIGHT < 1 )) && SIDE_HEIGHT=9
+[[ $TALL_HEIGHT =~ ^[0-9]+$ ]] || TALL_HEIGHT=24
+(( TALL_HEIGHT < 1 )) && TALL_HEIGHT=24
+[[ $SIDE_HEIGHT =~ ^[0-9]+$ ]] || SIDE_HEIGHT=13
+(( SIDE_HEIGHT < 1 )) && SIDE_HEIGHT=13
 
 export DASH_PREFIX="$PREFIX"
 export DASH_FALLBACK_SHELL="$FALLBACK_SHELL"
@@ -318,8 +318,8 @@ tall_i=-1
 
 # `main` layout: keep the pane order from dash.conf (logs, btop,
 # proxy, ...) and reserve enough rows for the tall pane. Without this,
-# tmux's main-vertical layout equalises panes and btop's process box
-# (16 rows minimum) does not fit in a normal 40-row window.
+# tmux's main-vertical layout equalises panes and btop's four boxes
+# (24 rows minimum at the dashboard's width) do not fit.
 if [[ $LAYOUT == main || $LAYOUT == main-vertical ]] && [[ -n $TALL_PANE ]] && ((pane_count >= 3)); then
   for ((i = 2; i < pane_count; i++)); do
     if [[ ${PANE_TITLES[i]} == "$TALL_PANE" ]]; then
