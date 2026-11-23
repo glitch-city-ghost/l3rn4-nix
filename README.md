@@ -98,7 +98,7 @@ ordinary processes:
 | --- | --- |
 | shell | `$SHELL` — type here, or start a TUI such as `opencode` |
 | logs | `journalctl -fu mihomo` |
-| btop | `btop` with the `cyberpunk` theme; process list, no CPU/mem/net boxes |
+| btop | `btop` with the `cyberpunk` theme; all four boxes (cpu, mem, net, proc) |
 | proxy | read-only mihomo snapshot: service, controller, port, node, connections, traffic, egress |
 
 ```bash
@@ -130,11 +130,21 @@ pane "errors" bash -c 'journalctl -fu mihomo | grep --line-buffered -Ei "error|f
 The repo ships `btop/btop.conf` and the generated theme at
 `themes/cyberpunk/btop/cyberpunk.theme`; home-manager installs them under
 `~/.config/btop/`. The theme uses the colors of
-`cyberpunk-palette.yaml`; the shipped config shows only the process box,
-because the dashboard pane is narrow. Its process box needs 16 rows, so
-`dash_tall_pane` / `dash_tall_height` grow the `btop` pane in the `main`
-layout. In a shorter window, zoom the pane with `<prefix> z`. `htop` remains
-installed as a fallback.
+`cyberpunk-palette.yaml`. The config shows the stock four boxes
+(`cpu mem net proc`), so `1`-`4` switch between them.
+
+The config is WSL-specific: GPU monitoring is off. btop initialises NVML at
+startup whenever `shown_gpus` contains `nvidia` (the default, even with no GPU
+box shown), and that path is known to hang or spin on WSL2 — `shown_gpus` is
+therefore empty. `terminal_sync` is off too, as a guard against Windows
+Terminal/ConPTY stalls; re-enable it if your terminal handles synchronized
+output correctly.
+
+The dashboard pane is narrow, so all four boxes may not fit there. The process
+box alone needs 16 rows; `dash_tall_pane` / `dash_tall_height` can grow the
+`btop` pane in the `main` layout (raise `dash_tall_height` if btop reports the
+terminal is too small). Otherwise zoom the pane with `<prefix> z`. `htop`
+remains installed as a fallback.
 
 The file also sets `dash_layout` (`main`, `main-horizontal`, `grid`,
 `horizontal`, `vertical`), `dash_main_width` / `dash_main_height`,
