@@ -116,9 +116,13 @@ Generated from palette, matches original plugin exactly.
 
 ### 5. 📊 BTOP — `themes/cyberpunk/btop/cyberpunk.theme` (generated)
 
-**Status**: **38/38 match** ✅
+**Status**: **48/48 keys** ✅ — every value resolves to a color in the palette.
 
-All colors use semantic aliases (e.g., `surface.status_bg`, `text.main`, `accents.pink`, etc.). Template mapping is 1:1. Generated output fixes 2 stale `#120b10` (`selected_fg`, `followed_fg`) → `base.bg` `#130b10`.
+- `main_bg` is `base.bg` (`#130b10`), not `surface.status_bg`; the canvas now matches Vim Normal instead of the old maroon tint.
+- Box frames all use one quiet violet (`text.muted`); `div_line` uses `surface.selection`. Hot pink is reserved for `title`, cyan for `hi_fg`.
+- Selection is `surface.selection` + `text.light`, so the process list no longer flashes hot pink rows.
+- The process gradient uses btop 1.4's real `process_*` keys; the previous `proc_*` spelling was silently ignored.
+- Gradients stay semantic: cool/cyan for idle, green for free/available, yellow → pink → red for used, CPU and load.
 
 ---
 
