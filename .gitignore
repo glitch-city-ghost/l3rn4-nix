@@ -5,3 +5,7 @@
 .env
 secrets/
 private-*.yaml
+
+# Python
+__pycache__/
+*.pyc
