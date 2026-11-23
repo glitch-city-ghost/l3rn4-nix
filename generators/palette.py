@@ -80,4 +80,4 @@ def build_theme(name, files, palette_path=None):
         for output in outputs:
             write(output_root / output, text)
 
-    print(f"✅ {name} -> {output_root.relative_to(ROOT)}")
+    print(f"✅ {name} -> {output_root.relative_to(ROOT)}", flush=True)

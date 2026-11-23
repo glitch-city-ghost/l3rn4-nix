@@ -14,7 +14,7 @@ def main():
     )
 
     for script in scripts:
-        print(f"→ {script.name}")
+        print(f"→ {script.name}", flush=True)
         subprocess.run([sys.executable, str(script)], check=True)
 
 
