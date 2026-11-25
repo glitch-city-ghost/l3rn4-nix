@@ -1,6 +1,6 @@
 # 🎨 COMPLETE COLOR AUDIT REPORT: `cyberpunk-palette.yaml` vs ENTIRE SYSTEM
 
-**Canonical Source**: `cyberpunk-palette.yaml` (root, 64 lines)
+**Canonical Source**: `cyberpunk-palette.yaml` (root, 83 lines)
 
 ---
 
@@ -10,9 +10,9 @@
 |-----------|----------------|---------------------|-------------------------------------|
 | **Vim (editor)** | `themes/cyberpunk/vim/colors/cyberpunk.vim` (generated) | **31/31 match** | ✅ **COMPLETE** — Generated from palette, only intentional diff: Normal bg `#130b10` (palette) vs old `#120b10` |
 | **Airline (Vim status)** | `themes/cyberpunk/vim/autoload/airline/themes/cyberpunk.vim` (generated) | **18/18 match** | ✅ **COMPLETE** — Generated from palette |
-| **Starship** | `cybrcore.toml` | **22/26 match** | 8 custom shades (`*2` dark variants + orange) |
+| **Starship** | `themes/cyberpunk/starship/cybrcore.toml` (generated) | **20/20 match** | ✅ **COMPLETE** — 11 segment backgrounds in `shade.*` + `accents.orange` |
 | **Fastfetch** | `themes/cyberpunk/fastfetch/config.jsonc` (generated) | **12/12 match** | ✅ **COMPLETE** — ANSI black now `#130b10` from `ansi.black` |
-| **btop** | `themes/cyberpunk/btop/cyberpunk.theme` (generated) | **38/38 match** | ✅ **COMPLETE** — 2 stale `#120b10` replaced with `base.bg` |
+| **btop** | `themes/cyberpunk/btop/cyberpunk.theme` (generated) | **48/48 match** | ✅ **COMPLETE** — palette semantics; `main_bg` = `base.bg` |
 | **Dashboard (dash)** | `scripts/dash` | **7/7 match** | ⚠️ `#120b10` (old base.bg) in tmux status |
 | **Proxy Status** | `scripts/proxy-status` | **4/9 match** | 5 hardcoded RGB not in palette |
 | **Check Mihomo** | `scripts/check-mihomo.sh` | **3/6 match** | 3 hardcoded RGB not in palette |
@@ -59,34 +59,45 @@ Generated from palette, matches original plugin exactly.
 
 ---
 
-### 3. 🚀 STARSHIP — `cybrcore.toml`
+### 3. 🚀 STARSHIP — `themes/cyberpunk/starship/cybrcore.toml` (generated)
 
-**Status**: **22/26 match** — 8 custom shades (intentional)
+**Status**: **20/20 match** ✅ — every entry resolves to `cyberpunk-palette.yaml`.
 
-| cybrcore Key | Value | Palette Source | Match? |
-|--------------|-------|----------------|--------|
+- Template: `templates/starship/cybrcore.toml` (only the `[palettes.cybr_ship]` block is tokenised)
+- Generator: `generators/generate-starship.py`
+- Output is byte-identical to the previous hand-written `cybrcore.toml` (`sha256 ff4f2633…32bff1`),
+  so moving the prompt to generation changed no colour.
+
+| Starship Key | Value | Palette Source | Match? |
+|-------------|-------|----------------|--------|
 | `no0` | `#130b10` | `base.bg` | ✅ |
 | `no1` | `#1a1018` | `base.bg_alt` | ✅ |
 | `re0` | `#FF0055` | `text.main` | ✅ |
-| `re2` | `#331215` | — | ❌ **Custom dark red** |
+| `re2` | `#331215` | `shade.red` | ✅ |
 | `gr0` | `#00FF9C` | `accents.green` | ✅ |
-| `gr2` | `#0C3423` | — | ❌ **Custom dark green** |
+| `gr2` | `#0C3423` | `shade.green` | ✅ |
 | `ye0` | `#fffc58` | `accents.yellow` | ✅ |
-| `ye2` | `#332D10` | — | ❌ **Custom dark yellow** |
+| `ye2` | `#332D10` | `shade.yellow` | ✅ |
 | `bl0` | `#76C1FF` | `accents.blue` | ✅ |
-| `bl2` | `#0C1737` | — | ❌ **Custom dark blue** |
+| `bl2` | `#0C1737` | `shade.blue` | ✅ |
 | `pu0` | `#d57bff` | `accents.purple` | ✅ |
-| `pu2` | `#230D37` | — | ❌ **Custom dark purple** |
+| `pu2` | `#230D37` | `shade.purple` | ✅ |
 | `cy0` | `#00FFC8` | `accents.cyan` | ✅ |
-| `cy2` | `#0B292F` | — | ❌ **Custom dark cyan** |
+| `cy2` | `#0B292F` | `shade.cyan` | ✅ |
 | `wh0` | `#EEFFFF` | `text.light` | ✅ |
-| `wh2` | `#1E2025` | — | ❌ **Custom dark gray** |
-| `me0` | `#4D5A80` | — | ❌ **Custom muted blue** |
-| `me2` | `#0D1120` | — | ❌ **Custom dark navy** |
-| `or0` | `#F23D18` | — | ❌ **Custom orange** |
-| `or2` | `#330F0B` | — | ❌ **Custom dark orange** |
+| `wh2` | `#1E2025` | `shade.neutral` | ✅ |
+| `me0` | `#4D5A80` | `shade.steel` | ✅ |
+| `me2` | `#0D1120` | `shade.navy` | ✅ |
+| `or0` | `#F23D18` | `accents.orange` | ✅ |
+| `or2` | `#330F0B` | `shade.orange` | ✅ |
 
-> **Intentional**: Starship needs darker background variants (`*2`) for segment backgrounds. The `or0/or2` orange is for Rust/Java.
+> **Note**: Starship's `*2` background shades and the Rust/Java orange now live in the
+> palette (`shade.*`, `accents.orange`) so the prompt is generated like Vim and btop.
+>
+> **Dead names**: `gr0 gr2 wh0 wh2 me0 me2` are declared but never referenced by a
+> `style`/`format`. They were kept for a 1:1, byte-identical migration. Prune them
+> during the palette cleanup; `shade.green`, `shade.neutral`, `shade.steel` and
+> `shade.navy` then lose their only consumer.
 
 ---
 
@@ -147,17 +158,17 @@ Generated from palette, matches original plugin exactly.
 
 ### 7. 🔗 PROXY STATUS — `scripts/proxy-status`
 
-**Status**: **4/9 match** — 5 hardcoded
+**Status**: **8/8 match** — the only divergence is hex case, not colour
 
 | Variable | Hardcoded RGB | Hex | Palette Match? |
 |----------|---------------|-----|----------------|
-| `RED` | 255,50,112 | `#FF3270` | ~`accents.red` |
+| `RED` | 255,50,112 | `#FF3270` | ✅ `accents.red` (`#ff3270`) |
 | `GREEN` | 0,255,156 | `#00FF9C` | ✅ `accents.green` |
 | `CYAN` | 0,255,200 | `#00FFC8` | ✅ `accents.cyan` |
 | `PURPLE` | 213,123,255 | `#D57BFF` | ✅ `accents.purple` |
 | `WHITE` | 238,255,255 | `#EEFFFF` | ✅ `text.light` |
 | `DIM` | 103,102,179 | `#6766B3` | ✅ `text.muted` |
-| `HDR` bg | 51,18,21 | `#331215` | ❌ Custom (Starship `re2`) |
+| `HDR` bg | 51,18,21 | `#331215` | ✅ `shade.red` (Starship `re2`) |
 | `HDR` fg | 255,0,85 | `#FF0055` | ✅ `text.main` |
 
 ---
@@ -190,8 +201,8 @@ delta.syntax-theme = "TwoDark";  # Built-in, NOT our palette
 
 | Palette Key | Used By |
 |-------------|---------|
-| `base.bg` (`#130b10`) | Starship, **Fastfetch (generated)**, **btop (generated)**, **Dash (stale)**, **Vim (generated)** |
-| `base.bg_alt` (`#1a1018`) | Starship |
+| `base.bg` (`#130b10`) | Starship (generated), **Fastfetch (generated)**, **btop (generated)**, **Dash (stale)**, **Vim (generated)** |
+| `base.bg_alt` (`#1a1018`) | Starship (generated) |
 | `base.bg_dark` (`#000000`) | Vim (CursorLine, StatusLineNC) |
 | `base.bg_deep` (`#140007`) | Vim (CursorLineNr, Pmenu, Airline) |
 | `surface.status_bg` (`#1d000a`) | btop, Dash (tmux status) |
@@ -215,6 +226,8 @@ delta.syntax-theme = "TwoDark";  # Built-in, NOT our palette
 | `accents.teal` (`#009550`) | Vim (WarningMsg) |
 | `accents.diff_delete` (`#ff1745`) | **NEW** — Vim (DiffDelete) |
 | `accents.diff_text` (`#00ff84`) | **NEW** — Vim (DiffText) |
+| `accents.orange` (`#F23D18`) | **NEW** — Starship (Rust, Java) |
+| `shade.*` (`#331215` … `#330F0B`) | **NEW** — Starship segment backgrounds (`re2`, `gr2`, …) |
 | `ansi.bright_white` (`#FFFFFF`) | **NOWHERE** |
 
 ---
@@ -225,7 +238,7 @@ delta.syntax-theme = "TwoDark";  # Built-in, NOT our palette
 |-----|-----|--------|
 | `ansi.bright_white` | `#FFFFFF` | Pure white — our lightest is `#EEFFFF` (icy white) |
 
-> **All other surface/base colors ARE used by Vim.** The palette was more complete than we thought.
+> **All other surface/base colors ARE used by Vim and Starship.** The palette was more complete than we thought.
 
 ---
 
@@ -236,9 +249,8 @@ delta.syntax-theme = "TwoDark";  # Built-in, NOT our palette
 | **HIGH** | Dash | `scripts/dash` line 415 | Active window fg: `#120b10` → `#130b10` |
 | **MEDIUM** | Proxy Status | `scripts/proxy-status` | HDR bg: `#331215` → `surface.status_bg` `#1d000a`; RED → `#ff3270` |
 | **MEDIUM** | Check Mihomo | `scripts/check-mihomo.sh` | Error color: `#FF3270` → `#ff3270` |
-| **LOW** | Starship | `cybrcore.toml` | Document 8 extended colors as intentional |
 | **LOW** | Delta | `home/git.nix` | Generate custom delta theme from palette |
-| **ARCH** | All | — | Single generator: `palette.nix` → all configs |
+| **ARCH** | All | — | Single generator: `cyberpunk-palette.yaml` → all configs |
 
 ---
 
@@ -248,10 +260,10 @@ delta.syntax-theme = "TwoDark";  # Built-in, NOT our palette
 
 **The drift comes from:**
 1. ~~**External Vim plugin** pinned at old commit (uses `#120b10`)~~ → **FIXED: Now generated locally**
-2. **Manual duplication** in the remaining configs (Starship, dash, proxy-status, check-mihomo) instead of generation
-3. **Starship's semantic extensions** (dark variants, orange) — intentional
+2. **Manual duplication** in the remaining configs (dash, proxy-status, check-mihomo) instead of generation
+3. ~~**Starship's semantic extensions** (dark variants, orange)~~ → **FIXED: moved into `shade.*` / `accents.orange`, prompt is generated**
 
-**End goal**: Single `palette.nix` → generates all configs (Starship TOML, btop theme, fastfetch JSON, Vim colorscheme, dash/proxy-status bash colors, Delta theme).
+**End goal**: `cyberpunk-palette.yaml` + `generators/` → *every* config (Starship, btop, fastfetch, Vim/Airline, dash/proxy-status bash colours, Delta theme), with no hand-typed hex outside the palette.
 
 ---
 
@@ -271,3 +283,10 @@ delta.syntax-theme = "TwoDark";  # Built-in, NOT our palette
   - Fixed 3 stale `#120b10` values: Fastfetch ANSI black, btop `selected_fg`, btop `followed_fg`
   - Structural check: Fastfetch 41 leaves / 1 changed; btop 48 leaves / 2 changed; both structures identical
   - Nix: `home/packages.nix`, `home/btop.nix` now point at `themes/cyberpunk/...`
+- **2026-11-25**: Starship prompt migrated to generated theme (Step 3)
+  - Palette extended with `accents.orange` and a `shade:` section (10 dark segment backgrounds); existing colours untouched
+  - `templates/starship/cybrcore.toml` — only `[palettes.cybr_ship]` is tokenised
+  - Generator: `generators/generate-starship.py`
+  - Output: `themes/cyberpunk/starship/cybrcore.toml`, **byte-identical** to the hand-written file (`sha256 ff4f2633…32bff1`)
+  - Nix: `home/zsh.nix` reads the generated file; `nix-rebuild` regenerates themes before staging
+  - Remaining manual duplication: dash, proxy-status, check-mihomo, Delta

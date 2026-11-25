@@ -63,7 +63,7 @@ graph TD
 ## 📂 Repository Structure
 
 *   `flake.nix` / `configuration.nix` — The system's DNA. Fully declarative.
-*   `cybrcore.toml` — Cyberpunk Starship prompt. Because if you're going to hack the mainframe, do it with style.
+*   `themes/cyberpunk/starship/cybrcore.toml` — Cyberpunk Starship prompt, generated from `cyberpunk-palette.yaml` via `templates/starship/`. Because if you're going to hack the mainframe, do it with style.
 *   `generators/` — template renderers (`generate-all.py`; `palette.py` is the engine).
 *   `templates/` — human-readable config files with `@section.key@` palette placeholders.
 *   `themes/cyberpunk/fastfetch/config.jsonc` — Minimalist system fetch (generated).
