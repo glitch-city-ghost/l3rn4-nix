@@ -97,9 +97,9 @@ ordinary processes:
 | Pane | Default |
 | --- | --- |
 | shell | `$SHELL` — type here, or start a TUI such as `opencode` |
-| logs | `journalctl -fu mihomo` |
-| btop | `btop` with the `cyberpunk` theme; all four boxes (cpu, mem, net, proc) |
 | proxy | read-only mihomo snapshot: service, controller, port, node, connections, traffic, egress |
+| btop | `btop` with the `cyberpunk` theme; all four boxes (cpu, mem, net, proc) |
+| logs | `~/hydr4-agent/hydra logs` — hydr4-agent log stream |
 
 ```bash
 ./nix-rebuild
@@ -116,15 +116,15 @@ Panes are lines; the first one is the main pane in `main` layouts:
 
 ```bash
 pane "shell" "${SHELL:-bash}"
-pane "logs"  journalctl -fu mihomo -o short-iso --no-hostname
-pane "btop"  btop --force-utf
 pane "proxy" proxy-status
+pane "btop"  btop --force-utf
+pane "logs"  ~/hydr4-agent/hydra logs
 ```
 
 Anything executable works. For pipes or redirection wrap it in `bash -c`:
 
 ```bash
-pane "errors" bash -c 'journalctl -fu mihomo | grep --line-buffered -Ei "error|fail"'
+pane "errors" bash -c '~/hydr4-agent/hydra logs | grep --line-buffered -Ei "error|fail"'
 ```
 
 The repo ships `btop/btop.conf` and the generated theme at
@@ -141,10 +141,11 @@ Terminal/ConPTY stalls; re-enable it if your terminal handles synchronized
 output correctly.
 
 The dashboard pane is narrow, so all four boxes may not fit there. The `btop`
-pane is 24 rows tall; `dash_tall_pane` / `dash_tall_height` set it, and the
-two side panes keep at least 13 rows (`dash_side_height`). If btop reports
-the terminal is too small, raise `dash_tall_height` or zoom the pane with
-`<prefix> z`. `htop` remains installed as a fallback.
+pane is 26 rows tall; `dash_tall_pane` / `dash_tall_height` set it, and the
+other panes keep at least 14 rows (`dash_side_height`); `logs` takes the
+remainder. If btop reports the terminal is too small, raise
+`dash_tall_height` or zoom the pane with `<prefix> z`. `htop` remains
+installed as a fallback.
 
 The file also sets `dash_layout` (`main`, `main-horizontal`, `grid`,
 `horizontal`, `vertical`), `dash_main_width` / `dash_main_height`,
