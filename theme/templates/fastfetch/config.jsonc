@@ -1,0 +1,67 @@
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  "logo": {
+    "type": "small",
+    "source": "nixos",
+    "color": {
+      "1": "@text.main@", // Кислотно-розовый
+      "2": "@accents.blue@"  // Холодный синий
+    },
+    "padding": {
+      "top": 1,
+      "left": 2
+    }
+  },
+  "display": {
+    "separator": "   ",
+    "color": {
+      "keys": "@text.main@",   // Заголовки - розовые
+      "output": "@text.light@"  // Значения - ледяные белые (как идентификаторы в Vim)
+    }
+  },
+  "modules": [
+    {
+      "type": "title",
+      "color": {
+        "user": "@text.main@", // Пользователь - розовый
+        "host": "@accents.purple@"  // Хост - фиолетовый
+      }
+    },
+    {
+      "type": "separator",
+      "string": "──────────────────────────────",
+      "color": "@text.main@"
+    },
+    "os",
+    "kernel",
+    "uptime",
+    "shell",
+    "terminal",
+    "cpu",
+    "gpu",
+    "memory",
+    {
+      "type": "command",
+      "key": "Disk (/)",
+      "text": "disk-usage",
+      "format": "{result}"
+    },
+    "break",
+    {
+      "type": "colors",
+      "symbol": "circle",
+      "block": true,
+      "paddingLeft": 2,
+      "colors": [
+        "@ansi.black@", // black
+        "@ansi.red@", // red
+        "@ansi.green@", // green (только для палитры внизу)
+        "@ansi.yellow@", // yellow
+        "@ansi.blue@", // blue
+        "@ansi.magenta@", // magenta
+        "@ansi.cyan@", // cyan
+        "@ansi.white@"  // white
+      ]
+    }
+  ]
+}

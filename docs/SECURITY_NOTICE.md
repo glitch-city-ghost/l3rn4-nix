@@ -25,8 +25,8 @@ The `mihomo` systemd service runs with `CAP_DAC_OVERRIDE` to bypass file permiss
 * **Mitigation:** This is strictly confined by `ProtectSystem=strict` and `NoNewPrivileges`, meaning mihomo cannot write to system directories or escalate privileges.
 
 ### 5. Traefik uses the File Provider (No Docker API Access)
-Traefik does **not** have access to the Docker socket (`/var/run/docker.sock`) and no longer uses `docker-socket-proxy` or the Docker provider. All routes are declared statically in `traefik-dynamic/routes.yaml` and loaded through the file provider.
-* **Risk:** A new container does not become reachable until its router and service are added to `traefik-dynamic/routes.yaml`. There is no automatic Docker-label discovery.
+Traefik does **not** have access to the Docker socket (`/var/run/docker.sock`) and no longer uses `docker-socket-proxy` or the Docker provider. All routes are declared statically in `traefik/dynamic/routes.yaml` and loaded through the file provider.
+* **Risk:** A new container does not become reachable until its router and service are added to `traefik/dynamic/routes.yaml`. There is no automatic Docker-label discovery.
 * **Mitigation:** Docker API access is completely removed from Traefik. The socket proxy container is gone, so workloads on `traefik-net` cannot reach a read-only Docker API and inspect other containers. Traefik still runs with `no-new-privileges:true`.
 
 ---
