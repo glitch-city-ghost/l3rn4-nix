@@ -1,0 +1,421 @@
+#!/usr/bin/env bash
+# ==========================================================
+# l3rn4 :: dash
+# tmux dashboard for the Hydra environment.
+#
+# The layout and every pane command come from dash.conf:
+#   ~/.config/l3rn4/dash.conf   user copy (wins)
+#   <repo>/dash/dash.conf       packaged default
+#
+#   dash              attach or create
+#   dash grid         attach or create with equal tiles
+#   dash init         copy the default config to ~/.config/l3rn4
+#   dash config       show the config and panes in use
+#   dash kill         stop and remove the session
+#   dash help
+# ----------------------------------------------------------
+# The tmux server lives on its own socket (-L l3rn4), so normal
+# tmux sessions and ~/.config/tmux are not touched.
+# ==========================================================
+set -euo pipefail
+
+SELF=$(readlink -f "${BASH_SOURCE[0]}")
+SELF_DIR=$(dirname "$SELF")
+TMUX_BIN=${TMUX_BIN:-tmux}
+USER_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/l3rn4/dash.conf"
+
+usage() {
+  cat <<'EOF'
+l3rn4 :: dash
+
+Usage:
+  dash            attach or create the dashboard
+  dash grid       same, but override the layout with equal tiles
+  dash init       copy the packaged config to ~/.config/l3rn4/dash.conf
+  dash config     show the config and panes in use
+  dash kill       stop the dashboard
+  dash help       this text
+
+Config:
+  ~/.config/l3rn4/dash.conf   user copy (wins)
+  <repo>/dash/dash.conf       packaged default
+  DASH_CONFIG=/path           use another file
+
+Every pane is one line in dash.conf:
+  pane "logs" -- journalctl -fu mihomo -o short-iso
+
+Layouts: main, main-horizontal, grid, horizontal, vertical.
+Keys: <prefix> arrows, <prefix> z zoom, <prefix> d detach.
+EOF
+}
+
+die() {
+  printf '\e[38;2;255;50;112mdash: %s\e[0m\n' "$*" >&2
+  exit 1
+}
+
+# ---------------- internal pane launcher ----------------
+if [[ ${1:-} == __aux ]]; then
+  shift
+  label=${1:-pane}
+  shift || true
+  label=${label//[^[:alnum:]_-]/}
+  SHELL_BIN=${DASH_FALLBACK_SHELL:-bash}
+  PS1="\[\e[38;2;255;0;85m\][${label}]\[\e[0m\] \[\e[38;2;0;255;200m\]\w\[\e[0m\] ❯ "
+  export PS1
+  if (($#)); then
+    rc=0
+    "$@" || rc=$?
+    if ((rc != 0)); then
+      printf '\n\e[38;2;255;50;112m[%s] exited with %d\e[0m\n' "$label" "$rc"
+    fi
+  fi
+  printf '\e[38;2;103;102;179m[dash] %s finished; dropping to a shell. detach: %s d\e[0m\n' \
+    "$label" "${DASH_PREFIX:-C-b}"
+  exec "$SHELL_BIN" --noprofile --norc -i
+fi
+
+# ---------------- config discovery ----------------
+default_config() {
+  if [[ -n ${DASH_DEFAULT_CONFIG:-} && -f $DASH_DEFAULT_CONFIG ]]; then
+    printf '%s' "$DASH_DEFAULT_CONFIG"
+    return 0
+  fi
+  if [[ -f $SELF_DIR/dash.conf ]]; then
+    printf '%s' "$(readlink -f "$SELF_DIR/dash.conf")"
+    return 0
+  fi
+  return 1
+}
+
+resolve_config() {
+  if [[ -n ${DASH_CONFIG:-} ]]; then
+    printf '%s' "$DASH_CONFIG"
+    return 0
+  fi
+  if [[ -f $USER_CONFIG ]]; then
+    printf '%s' "$USER_CONFIG"
+    return 0
+  fi
+  default_config
+}
+
+do_init() {
+  local src dest
+  src=$(default_config) || die "packaged dash.conf not found"
+  dest=${DASH_CONFIG:-$USER_CONFIG}
+  if [[ -e $dest && $FORCE -ne 1 ]]; then
+    die "$dest already exists (use: dash init --force)"
+  fi
+  mkdir -p "$(dirname "$dest")"
+  cp "$src" "$dest"
+  chmod 0644 "$dest"
+  printf '\e[38;2;0;255;200mdash: wrote %s\e[0m\n' "$dest"
+  printf '      edit it, then run: dash\n'
+  exit 0
+}
+
+# ---------------- pane DSL ----------------
+PANE_TITLES=()
+PANE_CMDS=()
+
+pane() {
+  local title=${1:-pane}
+  shift || true
+  [[ ${1:-} == -- ]] && shift
+  (($#)) || set -- "${SHELL:-bash}"
+
+  local arg cmd=""
+  for arg in "$@"; do
+    printf -v arg '%q' "$arg"
+    cmd+="$arg "
+  done
+  cmd=${cmd% }
+
+  PANE_TITLES+=("$title")
+  PANE_CMDS+=("$cmd")
+}
+
+# ---------------- command line ----------------
+ACTION=attach
+LAYOUT_OVERRIDE=""
+FORCE=0
+while (($#)); do
+  case "$1" in
+    attach | up | start) ACTION=attach ;;
+    grid | tiles) LAYOUT_OVERRIDE=grid ;;
+    kill | stop | down) ACTION="kill" ;;
+    init) ACTION=init ;;
+    config | where) ACTION=config ;;
+    -f | --force) FORCE=1 ;;
+    help | -h | --help) usage; exit 0 ;;
+    *)
+      printf 'dash: unknown argument: %s\n\n' "$1" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+  shift
+done
+
+case "$ACTION" in
+  init) do_init ;;
+esac
+
+CONFIG=$(resolve_config) || CONFIG=""
+if [[ -z $CONFIG ]]; then
+  if [[ -n ${DASH_CONFIG:-} ]]; then
+    die "DASH_CONFIG not found: $DASH_CONFIG"
+  fi
+  die "no config found; run: dash init"
+fi
+[[ -f $CONFIG ]] || die "config not found: $CONFIG"
+
+# shellcheck source=/dev/null
+source "$CONFIG"
+
+# ---------------- defaults / env overrides ----------------
+SESSION=${DASH_SESSION:-${dash_session:-hydra}}
+SOCKET=${DASH_SOCKET:-${dash_socket:-l3rn4}}
+LAYOUT=${LAYOUT_OVERRIDE:-${DASH_LAYOUT:-${dash_layout:-main}}}
+MAIN_WIDTH=${DASH_MAIN_WIDTH:-${dash_main_width:-50%}}
+MAIN_HEIGHT=${DASH_MAIN_HEIGHT:-${dash_main_height:-45%}}
+TALL_PANE=${DASH_TALL_PANE:-${dash_tall_pane:-btop}}
+TALL_HEIGHT=${DASH_TALL_HEIGHT:-${dash_tall_height:-26}}
+SIDE_HEIGHT=${DASH_SIDE_HEIGHT:-${dash_side_height:-14}}
+PREFIX=${DASH_PREFIX:-${dash_prefix:-C-b}}
+MOUSE=${DASH_MOUSE:-${dash_mouse:-on}}
+STATUS_BAR=${DASH_STATUS:-${dash_status:-on}}
+BORDERS=${DASH_BORDERS:-${dash_borders:-on}}
+TERM_NAME=${DASH_TERM:-${dash_term:-tmux-256color}}
+WORKDIR=${DASH_WORKDIR:-${dash_workdir:-$HOME}}
+FOCUS=${DASH_FOCUS:-${dash_focus:-0}}
+FALLBACK_SHELL=${DASH_FALLBACK_SHELL:-${dash_fallback_shell:-bash}}
+
+if [[ $ACTION == config ]]; then
+  printf 'config   %s\n' "$CONFIG"
+  printf 'socket   %s\n' "$SOCKET"
+  printf 'session  %s\n' "$SESSION"
+  printf 'layout   %s\n' "$LAYOUT"
+  if [[ $LAYOUT == main || $LAYOUT == main-vertical ]]; then
+    printf 'size     %s wide\n' "$MAIN_WIDTH"
+  elif [[ $LAYOUT == main-horizontal ]]; then
+    printf 'size     %s tall\n' "$MAIN_HEIGHT"
+  fi
+  printf 'focus    %s\n' "$FOCUS"
+  printf 'panes    %s\n' "${#PANE_TITLES[@]}"
+  for i in "${!PANE_TITLES[@]}"; do
+    printf '  %d  %-12s %s\n' "$i" "${PANE_TITLES[i]}" "${PANE_CMDS[i]}"
+  done
+  exit 0
+fi
+
+command -v "$TMUX_BIN" >/dev/null 2>&1 || die "tmux not found. Rebuild the system: ./nix-rebuild"
+TM=( "$TMUX_BIN" -L "$SOCKET" )
+
+if [[ $ACTION == kill ]]; then
+  "${TM[@]}" kill-session -t "$SESSION" 2>/dev/null || true
+  printf '\e[38;2;0;255;200mdash: dashboard stopped (%s)\e[0m\n' "$SOCKET"
+  exit 0
+fi
+
+if [[ -n ${TMUX:-} ]]; then
+  die "already inside tmux. Detach first (${PREFIX} d), then run dash from a plain terminal."
+fi
+
+if "${TM[@]}" has-session -t "$SESSION" 2>/dev/null; then
+  exec "${TM[@]}" attach-session -t "$SESSION"
+fi
+
+# ---------------- validation ----------------
+[[ $SESSION =~ ^[A-Za-z0-9_-]+$ ]] || die "invalid dash_session '$SESSION'"
+[[ $SOCKET =~ ^[A-Za-z0-9_-]+$ ]] || die "invalid dash_socket '$SOCKET'"
+case "$FALLBACK_SHELL" in
+  bash | */bash) ;;
+  *) die "dash_fallback_shell '$FALLBACK_SHELL' is not supported (use bash)" ;;
+esac
+FALLBACK_SHELL=$(command -v "$FALLBACK_SHELL" || command -v bash || printf 'bash')
+
+(( ${#PANE_TITLES[@]} > 0 )) || die "no panes in $CONFIG (add: pane \"name\" command)"
+(( ${#PANE_TITLES[@]} == ${#PANE_CMDS[@]} )) || die "pane table mismatch in $CONFIG"
+(( ${#PANE_TITLES[@]} <= 8 )) || die "too many panes in $CONFIG (max 8)"
+
+case "$LAYOUT" in
+  main | main-vertical)
+    TMUX_LAYOUT="main-vertical"
+    ;;
+  main-horizontal | top)
+    TMUX_LAYOUT="main-horizontal"
+    ;;
+  grid | tiled)
+    TMUX_LAYOUT=tiled
+    ;;
+  horizontal | columns)
+    TMUX_LAYOUT=even-horizontal
+    ;;
+  vertical | rows)
+    TMUX_LAYOUT=even-vertical
+    ;;
+  *)
+    die "unknown layout '$LAYOUT' (use: main, main-horizontal, grid, horizontal, vertical)"
+    ;;
+esac
+
+[[ $FOCUS =~ ^[0-9]+$ ]] || FOCUS=0
+(( FOCUS < ${#PANE_TITLES[@]} )) || FOCUS=0
+[[ $TALL_HEIGHT =~ ^[0-9]+$ ]] || TALL_HEIGHT=24
+(( TALL_HEIGHT < 1 )) && TALL_HEIGHT=24
+[[ $SIDE_HEIGHT =~ ^[0-9]+$ ]] || SIDE_HEIGHT=13
+(( SIDE_HEIGHT < 1 )) && SIDE_HEIGHT=13
+
+export DASH_PREFIX="$PREFIX"
+export DASH_FALLBACK_SHELL="$FALLBACK_SHELL"
+
+aux_cmd_for() {
+  local title=$1 cmd=$2
+  printf '%q __aux %q %s' "$SELF" "$title" "$cmd"
+}
+
+set_opt() {
+  "${TM[@]}" set-option "$@" >/dev/null 2>&1 || true
+}
+
+set_wopt() {
+  "${TM[@]}" set-window-option "$@" >/dev/null 2>&1 || true
+}
+
+# ---------------- build ----------------
+BUILDING=1
+cleanup_build() {
+  ((BUILDING)) || return 0
+  "${TM[@]}" kill-session -t "$SESSION" >/dev/null 2>&1 || true
+}
+trap cleanup_build ERR
+
+# Create the detached session at the size of the calling terminal. If
+# we let tmux use 80x24, every pane is resized proportionally on attach
+# and btop ends up with the wrong number of rows.
+TERM_ROWS=${LINES:-24}
+TERM_COLS=${COLUMNS:-80}
+if [[ -t 0 ]]; then
+  if read -r stty_rows stty_cols < <(stty size 2>/dev/null); then
+    [[ $stty_rows =~ ^[0-9]+$ ]] && TERM_ROWS=$stty_rows
+    [[ $stty_cols =~ ^[0-9]+$ ]] && TERM_COLS=$stty_cols
+  fi
+fi
+[[ $TERM_ROWS =~ ^[0-9]+$ ]] && ((TERM_ROWS > 5)) || TERM_ROWS=24
+[[ $TERM_COLS =~ ^[0-9]+$ ]] && ((TERM_COLS > 20)) || TERM_COLS=80
+
+main=$(
+  "${TM[@]}" new-session -d -s "$SESSION" -n dash -c "$WORKDIR" \
+    -x "$TERM_COLS" -y "$TERM_ROWS" \
+    -P -F '#{pane_id}' "$(aux_cmd_for "${PANE_TITLES[0]}" "${PANE_CMDS[0]}")"
+)
+
+ids=("$main")
+pane_count=${#PANE_TITLES[@]}
+tall_i=-1
+
+# `main` layout: keep the pane order from dash.conf (proxy, btop, logs)
+# and reserve enough rows for the tall pane. Without this, tmux's
+# main-vertical layout equalises panes and btop's four boxes
+# (24 rows minimum at the dashboard's width) do not fit.
+if [[ $LAYOUT == main || $LAYOUT == main-vertical ]] && [[ -n $TALL_PANE ]] && ((pane_count >= 3)); then
+  for ((i = 2; i < pane_count; i++)); do
+    if [[ ${PANE_TITLES[i]} == "$TALL_PANE" ]]; then
+      tall_i=$i
+      break
+    fi
+  done
+fi
+
+if ((tall_i >= 2)); then
+  logs_id=$(
+    "${TM[@]}" split-window -h -t "$main" -l 50% -c "$WORKDIR" \
+      -P -F '#{pane_id}' "$(aux_cmd_for "${PANE_TITLES[1]}" "${PANE_CMDS[1]}")"
+  )
+  ids[1]=$logs_id
+
+  height=$("${TM[@]}" display-message -p -t "$logs_id" '#{pane_height}')
+  right_count=$((pane_count - 1))
+  right_sum=$((height - (right_count - 1)))
+  max_tall=$((right_sum - (right_count - 1)))
+  ((max_tall < 1)) && max_tall=1
+
+  tall_h=$TALL_HEIGHT
+  ((tall_h > max_tall)) && tall_h=$max_tall
+  ((tall_h < 1)) && tall_h=1
+
+  side_count=$((pane_count - 3))
+  side_h=$SIDE_HEIGHT
+  if ((side_count > 0)); then
+    max_side=$(((right_sum - tall_h - 5) / side_count))
+    if ((max_side < 1)); then
+      max_side=$(((right_sum - tall_h - 1) / side_count))
+    fi
+    ((max_side < 1)) && max_side=1
+    ((side_h > max_side)) && side_h=$max_side
+    ((side_h < 1)) && side_h=1
+  fi
+
+  for ((i = pane_count - 1; i >= 2; i--)); do
+    if ((i == tall_i)); then h=$tall_h; else h=$side_h; fi
+    ids[i]=$(
+      "${TM[@]}" split-window -v -t "$logs_id" -l "$h" -c "$WORKDIR" \
+        -P -F '#{pane_id}' "$(aux_cmd_for "${PANE_TITLES[i]}" "${PANE_CMDS[i]}")"
+    )
+  done
+
+  "${TM[@]}" resize-pane -t "$main" -x "$MAIN_WIDTH" >/dev/null 2>&1 || true
+else
+  for ((i = 1; i < pane_count; i++)); do
+    ids[i]=$(
+      "${TM[@]}" split-window -v -t "$main" -c "$WORKDIR" \
+        -P -F '#{pane_id}' "$(aux_cmd_for "${PANE_TITLES[i]}" "${PANE_CMDS[i]}")"
+    )
+  done
+
+  "${TM[@]}" select-layout -t "$SESSION:0" "$TMUX_LAYOUT" >/dev/null 2>&1 || true
+  if [[ $LAYOUT == main || $LAYOUT == main-vertical ]]; then
+    "${TM[@]}" resize-pane -t "$main" -x "$MAIN_WIDTH" >/dev/null 2>&1 || true
+  elif [[ $LAYOUT == main-horizontal || $LAYOUT == top ]]; then
+    "${TM[@]}" resize-pane -t "$main" -y "$MAIN_HEIGHT" >/dev/null 2>&1 || true
+  fi
+fi
+
+for i in "${!ids[@]}"; do
+  "${TM[@]}" select-pane -t "${ids[i]}" -T "${PANE_TITLES[i]}" >/dev/null 2>&1 || true
+done
+
+set_opt -s escape-time 0
+set_opt -s focus-events on
+set_opt -s default-terminal "$TERM_NAME"
+set_opt -s history-limit 20000
+set_opt -s allow-passthrough on
+set_opt -sa terminal-features '*:RGB'
+set_opt -t "$SESSION" mouse "$MOUSE"
+set_opt -t "$SESSION" prefix "$PREFIX"
+set_opt -t "$SESSION" status "$STATUS_BAR"
+set_opt -t "$SESSION" status-interval 5
+set_opt -t "$SESSION" status-style 'bg=#1d000a,fg=#FF0055'
+set_opt -t "$SESSION" status-left " #[bold]l3rn4#[nobold] :: ${SESSION} "
+set_opt -t "$SESSION" status-left-length 30
+set_opt -t "$SESSION" status-right " #[fg=#6766b3]${PREFIX} d detach#[default]  %H:%M "
+set_opt -t "$SESSION" status-right-length 40
+set_opt -t "$SESSION" allow-rename off
+set_opt -t "$SESSION" automatic-rename off
+if [[ $BORDERS == on ]]; then
+  set_wopt -t "$SESSION:0" pane-border-status top
+else
+  set_wopt -t "$SESSION:0" pane-border-status off
+fi
+set_wopt -t "$SESSION:0" pane-border-format ' #[bold]#{pane_title}#[nobold] '
+set_wopt -t "$SESSION:0" pane-border-style 'fg=#563466'
+set_wopt -t "$SESSION:0" pane-active-border-style 'fg=#FF0055'
+set_wopt -t "$SESSION:0" window-status-current-style 'bg=#FF0055,fg=#120b10,bold'
+
+"${TM[@]}" select-pane -t "${ids[FOCUS]}" >/dev/null 2>&1 || true
+BUILDING=0
+trap - ERR
+
+exec "${TM[@]}" attach-session -t "$SESSION"
