@@ -44,6 +44,22 @@ accents:
   teal:        "#009550"   # Предупреждения (Diagnostics)
   diff_delete: "#FF1745"   # Удаленные строки в diff (DiffDelete)
   diff_text:   "#00FF84"   # Измененный текст в diff (DiffText)
+  orange:      "#F23D18"   # Оранжевый: Rust, Java (Starship)
+
+# --- Shade (Темные подложки под акценты) ---
+# Добавлено для Starship (cybrcore.toml): bg сегмента промпта = shade.*,
+# fg = accents.* / text.*. Остальные цвета палитры не менялись.
+shade:
+  red:     "#331215"   # Starship re2
+  green:   "#0C3423"   # Starship gr2
+  yellow:  "#332D10"   # Starship ye2
+  blue:    "#0C1737"   # Starship bl2
+  purple:  "#230D37"   # Starship pu2
+  cyan:    "#0B292F"   # Starship cy2
+  neutral: "#1E2025"   # Starship wh2
+  steel:   "#4D5A80"   # Starship me0
+  navy:    "#0D1120"   # Starship me2
+  orange:  "#330F0B"   # Starship or2
 
 # --- ANSI (Маппинг для терминалов) ---
 # Это используется в Windows Terminal, Alacritty, Foot и др.

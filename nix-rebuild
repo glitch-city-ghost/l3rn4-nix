@@ -11,6 +11,14 @@ if [ -f .env ]; then
   set +a
 fi
 
+# Перегенерируем все темы из cyberpunk-palette.yaml, чтобы сборка
+# никогда не шла из устаревших themes/. Если python3 нет — предупреждаем.
+if command -v python3 >/dev/null 2>&1; then
+  python3 generators/generate-all.py
+else
+  echo "warning: python3 не найден; themes/ не перегенерированы" >&2
+fi
+
 # Добавляем все изменения, чтобы flake их увидел
 git add -u
 
