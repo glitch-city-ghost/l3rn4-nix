@@ -62,16 +62,19 @@ graph TD
 
 ## 📂 Repository Structure
 
-*   `flake.nix` / `configuration.nix` — The system's DNA. Fully declarative.
-*   `themes/cyberpunk/starship/cybrcore.toml` — Cyberpunk Starship prompt, generated from `cyberpunk-palette.yaml` via `templates/starship/`. Because if you're going to hack the mainframe, do it with style.
-*   `generators/` — template renderers (`generate-all.py`; `palette.py` is the engine).
-*   `templates/` — human-readable config files with `@section.key@` palette placeholders.
-*   `themes/cyberpunk/fastfetch/config.jsonc` — Minimalist system fetch (generated).
-*   `nix-rebuild` — A custom wrapper that stages changes and rebuilds NixOS safely.
-*   `dash.conf` — Dashboard layout and pane commands for the tmux dashboard.
-*   `btop/` — btop config (the theme is generated under `themes/cyberpunk/btop/`).
-*   `scripts/dash` / `scripts/proxy-status` — The tmux dashboard and its proxy status pane.
-*   `modules/` — *(Coming soon)* Docker isolation and zerogateway systemd services.
+The root holds only the flake, the two entry modules and repository plumbing. Every other directory is a self-contained unit.
+
+*   `flake.nix` — inputs and the two entry modules (`host`, `home`).
+*   `host/` — NixOS: packages, Docker, GC, WSL, and the `mihomo`/`traefik` services.
+*   `home/` — Home Manager: shell, git, vim, btop, fastfetch, packages.
+*   `dash/` — the tmux dashboard: `dash.conf`, launcher, panes, packaging.
+*   `theme/` — the palette compiler:
+    *   `theme/palette.yaml` — the only source of colour;
+    *   `theme/templates/` — human-readable files with `@section.key@` tokens;
+    *   `theme/generators/` — render `templates/` into `generated/`;
+    *   `theme/generated/cyberpunk/` — committed output (Starship, btop, Fastfetch, Vim/Airline).
+*   `docs/` — security notice and colour audit.
+*   `nix-rebuild` — regenerates themes, stages changes, rebuilds NixOS.
 
 ---
 
@@ -91,7 +94,7 @@ cd l3rn4-nix
 ## 📊 Dashboard (PoC)
 
 A tmux dashboard for daily driving. Its layout and every pane command live in
-`dash.conf`; the first pane is your interactive shell/agent, the rest are
+`dash/dash.conf`; the first pane is your interactive shell/agent, the rest are
 ordinary processes:
 
 | Pane | Default |
@@ -103,7 +106,7 @@ ordinary processes:
 
 ```bash
 ./nix-rebuild
-dash init            # copy dash.conf to ~/.config/l3rn4/dash.conf (once)
+dash init            # copy dash/dash.conf to ~/.config/l3rn4/dash.conf (once)
 $EDITOR ~/.config/l3rn4/dash.conf
 dash                 # create or attach
 
@@ -127,10 +130,10 @@ Anything executable works. For pipes or redirection wrap it in `bash -c`:
 pane "errors" bash -c '~/hydr4-agent/hydra logs | grep --line-buffered -Ei "error|fail"'
 ```
 
-The repo ships `btop/btop.conf` and the generated theme at
-`themes/cyberpunk/btop/cyberpunk.theme`; home-manager installs them under
+The repo ships `home/btop/btop.conf` and the generated theme at
+`theme/generated/cyberpunk/btop/cyberpunk.theme`; home-manager installs them under
 `~/.config/btop/`. The theme uses the colors of
-`cyberpunk-palette.yaml`. The config shows the stock four boxes
+`theme/palette.yaml`. The config shows the stock four boxes
 (`cpu mem net proc`), so `1`-`4` switch between them.
 
 The config is WSL-specific: GPU monitoring is off. btop initialises NVML at
@@ -166,7 +169,7 @@ config in `/var/lib/private/mihomo/config.yaml`.
 
 Keep multiple profiles with `DASH_CONFIG=~/.config/l3rn4/dash.dev.conf dash`.
 
-The packaged `dash.conf` is read-only in the Nix store; a copy in
+The packaged `dash/dash.conf` is read-only in the Nix store; a copy in
 `~/.config/l3rn4/` wins and is never overwritten by a rebuild.
 
 `dash` runs on a dedicated tmux socket (`-L l3rn4`), starts nothing at boot and

@@ -1,6 +1,6 @@
-# 🎨 COMPLETE COLOR AUDIT REPORT: `cyberpunk-palette.yaml` vs ENTIRE SYSTEM
+# 🎨 COMPLETE COLOR AUDIT REPORT: `theme/palette.yaml` vs ENTIRE SYSTEM
 
-**Canonical Source**: `cyberpunk-palette.yaml` (root, 83 lines)
+**Canonical Source**: `theme/palette.yaml` (83 lines)
 
 ---
 
@@ -8,31 +8,31 @@
 
 | Component | Source File(s) | Colors from Palette | **Divergent / Missing / Hardcoded** |
 |-----------|----------------|---------------------|-------------------------------------|
-| **Vim (editor)** | `themes/cyberpunk/vim/colors/cyberpunk.vim` (generated) | **31/31 match** | ✅ **COMPLETE** — Generated from palette, only intentional diff: Normal bg `#130b10` (palette) vs old `#120b10` |
-| **Airline (Vim status)** | `themes/cyberpunk/vim/autoload/airline/themes/cyberpunk.vim` (generated) | **18/18 match** | ✅ **COMPLETE** — Generated from palette |
-| **Starship** | `themes/cyberpunk/starship/cybrcore.toml` (generated) | **20/20 match** | ✅ **COMPLETE** — 11 segment backgrounds in `shade.*` + `accents.orange` |
-| **Fastfetch** | `themes/cyberpunk/fastfetch/config.jsonc` (generated) | **12/12 match** | ✅ **COMPLETE** — ANSI black now `#130b10` from `ansi.black` |
-| **btop** | `themes/cyberpunk/btop/cyberpunk.theme` (generated) | **48/48 match** | ✅ **COMPLETE** — palette semantics; `main_bg` = `base.bg` |
-| **Dashboard (dash)** | `scripts/dash` | **7/7 match** | ⚠️ `#120b10` (old base.bg) in tmux status |
-| **Proxy Status** | `scripts/proxy-status` | **4/9 match** | 5 hardcoded RGB not in palette |
-| **Check Mihomo** | `scripts/check-mihomo.sh` | **3/6 match** | 3 hardcoded RGB not in palette |
+| **Vim (editor)** | `theme/generated/cyberpunk/vim/colors/cyberpunk.vim` (generated) | **31/31 match** | ✅ **COMPLETE** — Generated from palette, only intentional diff: Normal bg `#130b10` (palette) vs old `#120b10` |
+| **Airline (Vim status)** | `theme/generated/cyberpunk/vim/autoload/airline/themes/cyberpunk.vim` (generated) | **18/18 match** | ✅ **COMPLETE** — Generated from palette |
+| **Starship** | `theme/generated/cyberpunk/starship/cybrcore.toml` (generated) | **20/20 match** | ✅ **COMPLETE** — 11 segment backgrounds in `shade.*` + `accents.orange` |
+| **Fastfetch** | `theme/generated/cyberpunk/fastfetch/config.jsonc` (generated) | **12/12 match** | ✅ **COMPLETE** — ANSI black now `#130b10` from `ansi.black` |
+| **btop** | `theme/generated/cyberpunk/btop/cyberpunk.theme` (generated) | **48/48 match** | ✅ **COMPLETE** — palette semantics; `main_bg` = `base.bg` |
+| **Dashboard (dash)** | `dash/dash` | **7/7 match** | ⚠️ `#120b10` (old base.bg) in tmux status |
+| **Proxy Status** | `dash/proxy-status` | **4/9 match** | 5 hardcoded RGB not in palette |
+| **Check Mihomo** | `dash/check-mihomo.sh` | **3/6 match** | 3 hardcoded RGB not in palette |
 | **Git/Delta** | `home/git.nix` | **0/1 match** | `delta.syntax-theme = "TwoDark"` (external) |
 
 ---
 
 ## ✅ STEP 1 COMPLETE: VIM & AIRLINE MIGRATION
 
-**Status**: **DONE** — Fully migrated to local generated theme from `cyberpunk-palette.yaml`
+**Status**: **DONE** — Fully migrated to local generated theme from `theme/palette.yaml`
 
 ### What Was Done
 
 | Task | Commit | Status |
 |------|--------|--------|
 | Added missing palette entries: `surface.vert_split`, `accents.diff_delete`, `accents.diff_text` | `dae1958` | ✅ |
-| Created generator: `generators/generate-vim-theme.py` | `63712bd` | ✅ |
-| Generated `themes/cyberpunk/vim/colors/cyberpunk.vim` (60 highlights) | `63712bd` | ✅ |
-| Generated `themes/cyberpunk/vim/autoload/airline/themes/cyberpunk.vim` + `autoload/airline/cyberpunk.vim` | `63712bd` | ✅ |
-| Migrated `home/vim.nix` to local plugin (`src = ../themes/cyberpunk/vim`) | `63712bd` | ✅ |
+| Created generator: `theme/generators/generate-vim.py` | `63712bd` | ✅ |
+| Generated `theme/generated/cyberpunk/vim/colors/cyberpunk.vim` (60 highlights) | `63712bd` | ✅ |
+| Generated `theme/generated/cyberpunk/vim/autoload/airline/themes/cyberpunk.vim` + `autoload/airline/cyberpunk.vim` | `63712bd` | ✅ |
+| Migrated `home/vim/default.nix` to local plugin (`src = ../../theme/generated/cyberpunk/vim`) | `63712bd` | ✅ |
 | Removed external `vim-cyberpunk` dependency (`fetchFromGitHub` + `postInstall` hack) | `63712bd` | ✅ |
 | Restored `vim-airline-themes` (required for Airline's onedark inheritance) | `63712bd` | ✅ |
 
@@ -59,12 +59,12 @@ Generated from palette, matches original plugin exactly.
 
 ---
 
-### 3. 🚀 STARSHIP — `themes/cyberpunk/starship/cybrcore.toml` (generated)
+### 3. 🚀 STARSHIP — `theme/generated/cyberpunk/starship/cybrcore.toml` (generated)
 
-**Status**: **20/20 match** ✅ — every entry resolves to `cyberpunk-palette.yaml`.
+**Status**: **20/20 match** ✅ — every entry resolves to `theme/palette.yaml`.
 
-- Template: `templates/starship/cybrcore.toml` (only the `[palettes.cybr_ship]` block is tokenised)
-- Generator: `generators/generate-starship.py`
+- Template: `theme/templates/starship/cybrcore.toml` (only the `[palettes.cybr_ship]` block is tokenised)
+- Generator: `theme/generators/generate-starship.py`
 - Output is byte-identical to the previous hand-written `cybrcore.toml` (`sha256 ff4f2633…32bff1`),
   so moving the prompt to generation changed no colour.
 
@@ -101,9 +101,9 @@ Generated from palette, matches original plugin exactly.
 
 ---
 
-### 4. ⚡ FASTFETCH — `themes/cyberpunk/fastfetch/config.jsonc` (generated)
+### 4. ⚡ FASTFETCH — `theme/generated/cyberpunk/fastfetch/config.jsonc` (generated)
 
-**Status**: **12/12 match** ✅ — generated from `templates/fastfetch/config.jsonc`
+**Status**: **12/12 match** ✅ — generated from `theme/templates/fastfetch/config.jsonc`
 
 | Usage | Value | Palette Key | Match? |
 |-------|-------|-------------|--------|
@@ -125,7 +125,7 @@ Generated from palette, matches original plugin exactly.
 
 ---
 
-### 5. 📊 BTOP — `themes/cyberpunk/btop/cyberpunk.theme` (generated)
+### 5. 📊 BTOP — `theme/generated/cyberpunk/btop/cyberpunk.theme` (generated)
 
 **Status**: **48/48 keys** ✅ — every value resolves to a color in the palette.
 
@@ -137,7 +137,7 @@ Generated from palette, matches original plugin exactly.
 
 ---
 
-### 6. 🎛 DASHBOARD (dash) — `scripts/dash`
+### 6. 🎛 DASHBOARD (dash) — `dash/dash`
 
 **Status**: **7/7 match** — **1 stale value**
 
@@ -156,7 +156,7 @@ Generated from palette, matches original plugin exactly.
 
 ---
 
-### 7. 🔗 PROXY STATUS — `scripts/proxy-status`
+### 7. 🔗 PROXY STATUS — `dash/proxy-status`
 
 **Status**: **8/8 match** — the only divergence is hex case, not colour
 
@@ -173,7 +173,7 @@ Generated from palette, matches original plugin exactly.
 
 ---
 
-### 8. 🩺 CHECK MIHOMO — `scripts/check-mihomo.sh`
+### 8. 🩺 CHECK MIHOMO — `dash/check-mihomo.sh`
 
 **Status**: **3/6 match** — 3 hardcoded
 
@@ -246,11 +246,11 @@ delta.syntax-theme = "TwoDark";  # Built-in, NOT our palette
 
 | Priority | Component | File | Change |
 |----------|-----------|------|--------|
-| **HIGH** | Dash | `scripts/dash` line 415 | Active window fg: `#120b10` → `#130b10` |
-| **MEDIUM** | Proxy Status | `scripts/proxy-status` | HDR bg: `#331215` → `surface.status_bg` `#1d000a`; RED → `#ff3270` |
-| **MEDIUM** | Check Mihomo | `scripts/check-mihomo.sh` | Error color: `#FF3270` → `#ff3270` |
+| **HIGH** | Dash | `dash/dash` line 415 | Active window fg: `#120b10` → `#130b10` |
+| **MEDIUM** | Proxy Status | `dash/proxy-status` | HDR bg: `#331215` → `surface.status_bg` `#1d000a`; RED → `#ff3270` |
+| **MEDIUM** | Check Mihomo | `dash/check-mihomo.sh` | Error color: `#FF3270` → `#ff3270` |
 | **LOW** | Delta | `home/git.nix` | Generate custom delta theme from palette |
-| **ARCH** | All | — | Single generator: `cyberpunk-palette.yaml` → all configs |
+| **ARCH** | All | — | Single generator: `theme/palette.yaml` → all configs |
 
 ---
 
@@ -263,30 +263,30 @@ delta.syntax-theme = "TwoDark";  # Built-in, NOT our palette
 2. **Manual duplication** in the remaining configs (dash, proxy-status, check-mihomo) instead of generation
 3. ~~**Starship's semantic extensions** (dark variants, orange)~~ → **FIXED: moved into `shade.*` / `accents.orange`, prompt is generated**
 
-**End goal**: `cyberpunk-palette.yaml` + `generators/` → *every* config (Starship, btop, fastfetch, Vim/Airline, dash/proxy-status bash colours, Delta theme), with no hand-typed hex outside the palette.
+**End goal**: `theme/palette.yaml` + `theme/generators/` → *every* config (Starship, btop, fastfetch, Vim/Airline, dash/proxy-status bash colours, Delta theme), with no hand-typed hex outside the palette.
 
 ---
 
 ## 📝 UPDATE LOG
 
-- **2026-11-20**: Step 1 complete — Vim & Airline fully migrated to generated theme from `cyberpunk-palette.yaml`
+- **2026-11-20**: Step 1 complete — Vim & Airline fully migrated to generated theme from `theme/palette.yaml`
   - Palette extended with `surface.vert_split`, `accents.diff_delete`, `accents.diff_text`
-  - Generator: `generators/generate-vim-theme.py`
-  - Output: `themes/cyberpunk/vim/`
-  - Nix: `home/vim.nix` uses local plugin
+  - Generator: `theme/generators/generate-vim.py`
+  - Output: `theme/generated/cyberpunk/vim/`
+  - Nix: `home/vim/default.nix` uses local plugin
   - All verification passed (60/60 highlights, 7/7 Airline colors)
 - **2026-11-23**: Generator infrastructure refactored to template rendering
-  - `generators/palette.py` — loader + `@section.key@` substitution + `build_theme()`
-  - `templates/` — human-readable source files; `themes/` — generated output
+  - `theme/generators/palette.py` — loader + `@section.key@` substitution + `build_theme()`
+  - `theme/templates/` — human-readable source files; `theme/generated/` — generated output
   - Vim generator reduced from 303 lines of embedded theme to 24 lines of mapping
 - **2026-11-23**: Fastfetch & btop migrated to templates (Step 2)
   - Fixed 3 stale `#120b10` values: Fastfetch ANSI black, btop `selected_fg`, btop `followed_fg`
   - Structural check: Fastfetch 41 leaves / 1 changed; btop 48 leaves / 2 changed; both structures identical
-  - Nix: `home/packages.nix`, `home/btop.nix` now point at `themes/cyberpunk/...`
+  - Nix: `home/fastfetch.nix`, `home/btop/default.nix` now point at `theme/generated/cyberpunk/...`
 - **2026-11-25**: Starship prompt migrated to generated theme (Step 3)
   - Palette extended with `accents.orange` and a `shade:` section (10 dark segment backgrounds); existing colours untouched
-  - `templates/starship/cybrcore.toml` — only `[palettes.cybr_ship]` is tokenised
-  - Generator: `generators/generate-starship.py`
-  - Output: `themes/cyberpunk/starship/cybrcore.toml`, **byte-identical** to the hand-written file (`sha256 ff4f2633…32bff1`)
+  - `theme/templates/starship/cybrcore.toml` — only `[palettes.cybr_ship]` is tokenised
+  - Generator: `theme/generators/generate-starship.py`
+  - Output: `theme/generated/cyberpunk/starship/cybrcore.toml`, **byte-identical** to the hand-written file (`sha256 ff4f2633…32bff1`)
   - Nix: `home/zsh.nix` reads the generated file; `nix-rebuild` regenerates themes before staging
   - Remaining manual duplication: dash, proxy-status, check-mihomo, Delta
